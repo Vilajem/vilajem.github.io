@@ -153,6 +153,14 @@
     <label for="setting-phone-token">Phone token</label>
     <input type="password" id="setting-phone-token" autocapitalize="off" autocorrect="off" spellcheck="false">
 
+    <label for="setting-projects-root">Projekt mappák helye (a Windows gépen)</label>
+    <input type="text" id="setting-projects-root" placeholder="pl. C:\Users\name\Projects" autocapitalize="off" autocorrect="off" spellcheck="false">
+    <div class="stage-actions">
+      <button type="button" data-action="config-refresh" class="ghost small">Aktuális lekérdezése</button>
+      <button type="button" data-action="config-save" class="ghost small">Mentés a gépre</button>
+    </div>
+    <p class="config-status" id="config-status"></p>
+
     <label for="setting-poll-interval">Automata frissítés (mp)</label>
     <input type="number" id="setting-poll-interval" min="2" max="60">
 

@@ -503,6 +503,13 @@ dialog h2 {
   text-transform: none !important;
 }
 
+.config-status {
+  font-size: 0.72rem;
+  color: var(--text-muted);
+  margin: 0.1rem 0 0.3rem;
+  min-height: 1em;
+}
+
 .advanced-settings { margin-top: 0.5rem; }
 .advanced-settings summary {
   cursor: pointer;

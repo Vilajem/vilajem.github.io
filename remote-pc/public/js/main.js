@@ -350,6 +350,40 @@ async function handleClaudeRemoteControl() {
   updateProgressBar();
 }
 
+function setConfigStatus(text, isError = false) {
+  const el = document.getElementById("config-status");
+  if (!el) return;
+  el.textContent = text;
+  el.style.color = isError ? "var(--error)" : "var(--text-muted)";
+}
+
+async function handleConfigRefresh() {
+  setConfigStatus("Lekérdezés…");
+  const res = await api.getConfig();
+  if (res.ok) {
+    document.getElementById("setting-projects-root").value = res.projectsRoot;
+    setConfigStatus(`Jelenlegi: ${res.projectsRoot}`);
+  } else {
+    setConfigStatus(res.message || res.error || "Nem sikerült lekérdezni.", true);
+  }
+}
+
+async function handleConfigSave() {
+  const value = document.getElementById("setting-projects-root").value.trim();
+  if (!value) {
+    setConfigStatus("Adj meg egy elérési utat.", true);
+    return;
+  }
+  setConfigStatus("Mentés…");
+  const res = await api.setConfig(value);
+  if (res.ok) {
+    setConfigStatus(`Elmentve: ${res.projectsRoot}`);
+    handleRefreshProjects();
+  } else {
+    setConfigStatus(res.message || res.error || "Nem sikerült elmenteni.", true);
+  }
+}
+
 async function handleShutdown() {
   if (!window.confirm("Biztosan leállítod a Windows gépet?")) return;
   setStageStatus("shutdown", "in-progress", "Leállítás kezdeményezve…");
@@ -372,6 +406,8 @@ const ACTIONS = {
   "claude-remote-control": handleClaudeRemoteControl,
   "claude-output": handleClaudeOutput,
   shutdown: handleShutdown,
+  "config-refresh": handleConfigRefresh,
+  "config-save": handleConfigSave,
 };
 
 // -- settings dialog ---------------------------------------------------------------
@@ -395,7 +431,9 @@ function openSettingsDialog() {
   document.getElementById("setting-auto-poll").checked = state.settings.autoPoll;
   document.getElementById("setting-api-base-url").value = state.settings.apiBaseUrl;
   document.getElementById("setting-rdp-template").value = state.settings.remoteDesktopTemplate;
+  setConfigStatus("");
   document.getElementById("settings-dialog").showModal();
+  handleConfigRefresh();
 }
 
 function saveSettingsFromForm() {

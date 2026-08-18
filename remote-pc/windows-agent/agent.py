@@ -24,6 +24,7 @@ from pathlib import Path
 
 BASE_DIR = Path(__file__).resolve().parent
 CONFIG_PATH = BASE_DIR / "config.json"
+RUNTIME_CONFIG_PATH = BASE_DIR / "runtime-config.json"
 NAME_RE = re.compile(r"^[A-Za-z0-9_-]{1,64}$")
 OUTPUT_MAXLEN = 200
 
@@ -35,8 +36,29 @@ def load_config() -> dict:
         return json.load(f)
 
 
+def load_runtime_overrides() -> dict:
+    if not RUNTIME_CONFIG_PATH.exists():
+        return {}
+    try:
+        with RUNTIME_CONFIG_PATH.open() as f:
+            return json.load(f)
+    except (json.JSONDecodeError, OSError):
+        return {}
+
+
+def save_runtime_overrides() -> None:
+    with RUNTIME_CONFIG_PATH.open("w") as f:
+        json.dump({"projects_root": str(RUNTIME["projects_root"])}, f, indent=2)
+
+
 CONFIG = load_config()
-PROJECTS_ROOT = Path(CONFIG["projects_root"]).resolve()
+_overrides = load_runtime_overrides()
+# projects_root can be changed at runtime from the phone (Settings), which
+# overrides config.json's value and persists to runtime-config.json so it
+# survives an agent restart. config.json's value is only the initial default.
+RUNTIME = {
+    "projects_root": Path(_overrides.get("projects_root", CONFIG["projects_root"])).resolve(),
+}
 
 
 def now_iso() -> str:
@@ -46,17 +68,28 @@ def now_iso() -> str:
 # -- project folder helpers ---------------------------------------------
 
 def list_projects() -> list[str]:
-    PROJECTS_ROOT.mkdir(parents=True, exist_ok=True)
-    return sorted(p.name for p in PROJECTS_ROOT.iterdir() if p.is_dir())
+    RUNTIME["projects_root"].mkdir(parents=True, exist_ok=True)
+    return sorted(p.name for p in RUNTIME["projects_root"].iterdir() if p.is_dir())
 
 
 def resolve_project(name: str) -> Path:
     if not NAME_RE.match(name or ""):
         raise ValueError("invalid_name")
-    target = (PROJECTS_ROOT / name).resolve()
-    if target != PROJECTS_ROOT and PROJECTS_ROOT not in target.parents:
+    root = RUNTIME["projects_root"]
+    target = (root / name).resolve()
+    if target != root and root not in target.parents:
         raise ValueError("invalid_name")
     return target
+
+
+def set_projects_root(raw_path: str) -> Path:
+    if not raw_path or not raw_path.strip():
+        raise ValueError("invalid_path")
+    candidate = Path(raw_path.strip()).resolve()
+    candidate.mkdir(parents=True, exist_ok=True)  # raises OSError if not creatable/writable
+    RUNTIME["projects_root"] = candidate
+    save_runtime_overrides()
+    return candidate
 
 
 # -- claude subprocess tracking (single session at a time) ---------------
@@ -181,6 +214,8 @@ class Handler(BaseHTTPRequestHandler):
             self._send_json(200, {"ok": True, "running": running, "lines": lines})
         elif path == "/api/claude-status":
             self._send_json(200, {"ok": True, **claude_status()})
+        elif path == "/api/config":
+            self._send_json(200, {"ok": True, "projectsRoot": str(RUNTIME["projects_root"])})
         else:
             self._send_json(404, {"ok": False, "error": "not_found"})
 
@@ -199,6 +234,8 @@ class Handler(BaseHTTPRequestHandler):
             self._remote_control()
         elif path == "/api/shutdown":
             self._shutdown()
+        elif path == "/api/config":
+            self._set_config()
         else:
             self._send_json(404, {"ok": False, "error": "not_found"})
 
@@ -275,6 +312,19 @@ class Handler(BaseHTTPRequestHandler):
             self._send_json(500, {"ok": False, "error": "shutdown_failed", "message": str(e)})
             return
         self._send_json(200, {"ok": True, "shutdownAt": now_iso(), "delaySec": delay_sec})
+
+    def _set_config(self):
+        body = self._read_json()
+        raw_path = body.get("projectsRoot", "")
+        try:
+            new_root = set_projects_root(raw_path)
+        except ValueError:
+            self._send_json(400, {"ok": False, "error": "invalid_path", "message": "Adj meg egy elérési utat."})
+            return
+        except OSError as e:
+            self._send_json(400, {"ok": False, "error": "invalid_path", "message": str(e)})
+            return
+        self._send_json(200, {"ok": True, "projectsRoot": str(new_root)})
 
     def log_message(self, format, *args):  # noqa: A002 - stdlib signature
         pass

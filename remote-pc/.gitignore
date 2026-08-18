@@ -1,3 +1,4 @@
 pi-server/config.json
 windows-agent/config.json
+windows-agent/runtime-config.json
 __pycache__/

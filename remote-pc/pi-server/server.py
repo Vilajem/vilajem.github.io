@@ -40,6 +40,7 @@ PROXY_PATHS = {
     "/api/claude/output",
     "/api/shutdown",
     "/api/claude-status",
+    "/api/config",
 }
 
 

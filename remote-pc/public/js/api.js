@@ -50,4 +50,6 @@ export const api = {
   claudeOutput: () => apiCall("GET", "/api/claude/output"),
   claudeStatus: () => apiCall("GET", "/api/claude-status"),
   shutdown: (delaySec) => apiCall("POST", "/api/shutdown", { delaySec }),
+  getConfig: () => apiCall("GET", "/api/config"),
+  setConfig: (projectsRoot) => apiCall("POST", "/api/config", { projectsRoot }),
 };

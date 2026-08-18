@@ -79,7 +79,9 @@ telepítve unattended access-szel) ránézni a gépre és újra bejelentkezni.
    pl. `C:\remote-pc\windows-agent`.
 5. Másold `config.example.json` → `config.json`, töltsd ki:
    - `auth_token`: hosszú, véletlen string (egyezzen a Pi `windows_agent_token`-jével)
-   - `projects_root`: hova kerüljenek az új projekt mappák
+   - `projects_root`: hova kerüljenek az új projekt mappák (ez csak a kezdeti érték —
+     a telefonos Beállítások panelről bármikor átírható; az aktuális érték a
+     `windows-agent/runtime-config.json`-ban perzisztálódik, agent-újraindítást is túlél)
    - `code_command` / `claude_command`: hagyd `code`/`claude`-on, ha PATH-on vannak
 6. Regisztráld az agentet: nyiss egy admin PowerShell-t a `windows-agent` mappában, és
    futtasd: `powershell -ExecutionPolicy Bypass -File register-task.ps1`
