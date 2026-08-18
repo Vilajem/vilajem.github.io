@@ -29,6 +29,76 @@ function renderStage(id) {
   if (badge) badge.textContent = STATUS_LABELS[s.status] || s.status.toUpperCase();
   const feedback = card.querySelector('[data-role="feedback"]');
   if (feedback) feedback.textContent = s.message || "Még nem történt semmi.";
+  const spinner = card.querySelector('[data-role="spinner"]');
+  if (spinner) spinner.classList.toggle("is-active", s.status === "in-progress");
+}
+
+// -- "thinking" indicator: an animated point-and-line network (Watch Dogs-ish) --
+
+const SVG_NS = "http://www.w3.org/2000/svg";
+const GEO_POINTS = [
+  { r: 9, speed: 1.3, phase: 0.0 },
+  { r: 7, speed: -1.7, phase: 2.1 },
+  { r: 10, speed: 2.0, phase: 4.2 },
+  { r: 6.5, speed: -1.1, phase: 1.0 },
+];
+const GEO_PAIRS = [
+  [0, 1], [0, 2], [0, 3], [1, 2], [1, 3], [2, 3],
+];
+let geoTime = 0;
+
+function buildGeoSpinner() {
+  const svg = document.createElementNS(SVG_NS, "svg");
+  svg.setAttribute("viewBox", "0 0 32 32");
+  svg.classList.add("geo-spinner-svg");
+  for (const [a, b] of GEO_PAIRS) {
+    const line = document.createElementNS(SVG_NS, "line");
+    line.dataset.a = a;
+    line.dataset.b = b;
+    line.setAttribute("class", "geo-line");
+    svg.appendChild(line);
+  }
+  GEO_POINTS.forEach((_, i) => {
+    const dot = document.createElementNS(SVG_NS, "circle");
+    dot.setAttribute("r", "1.6");
+    dot.setAttribute("class", "geo-dot");
+    dot.dataset.i = i;
+    svg.appendChild(dot);
+  });
+  return svg;
+}
+
+function initGeoSpinners() {
+  document.querySelectorAll(".thinking-spinner").forEach((container) => {
+    container.appendChild(buildGeoSpinner());
+  });
+}
+
+function tickGeoSpinners() {
+  geoTime += 0.025;
+  const positions = GEO_POINTS.map((p) => ({
+    x: 16 + p.r * Math.cos(geoTime * p.speed + p.phase),
+    y: 16 + p.r * Math.sin(geoTime * p.speed * 1.15 + p.phase),
+  }));
+  document.querySelectorAll(".geo-spinner-svg").forEach((svg) => {
+    svg.querySelectorAll(".geo-dot").forEach((dot) => {
+      const p = positions[Number(dot.dataset.i)];
+      dot.setAttribute("cx", p.x.toFixed(2));
+      dot.setAttribute("cy", p.y.toFixed(2));
+    });
+    svg.querySelectorAll(".geo-line").forEach((line) => {
+      const a = positions[Number(line.dataset.a)];
+      const b = positions[Number(line.dataset.b)];
+      line.setAttribute("x1", a.x.toFixed(2));
+      line.setAttribute("y1", a.y.toFixed(2));
+      line.setAttribute("x2", b.x.toFixed(2));
+      line.setAttribute("y2", b.y.toFixed(2));
+      const dist = Math.hypot(a.x - b.x, a.y - b.y);
+      const opacity = Math.max(0.12, Math.min(0.9, 1 - dist / 22));
+      line.setAttribute("opacity", opacity.toFixed(2));
+    });
+  });
+  requestAnimationFrame(tickGeoSpinners);
 }
 
 function updateProgressBar() {
@@ -51,10 +121,33 @@ function renderProjectSelect() {
   }
 }
 
+let lastRenderedOutput = null;
+let typingTimer = null;
+
 function renderClaudeOutput() {
   const pre = document.querySelector('[data-role="claude-output"]');
   if (!pre) return;
-  pre.textContent = state.claude.lines.length ? state.claude.lines.join("\n") : "(még nincs kimenet)";
+  const text = state.claude.lines.length ? state.claude.lines.join("\n") : "(még nincs kimenet)";
+  if (text === lastRenderedOutput) return;
+  lastRenderedOutput = text;
+  typeIntoElement(pre, text);
+}
+
+function typeIntoElement(el, text) {
+  if (typingTimer) clearInterval(typingTimer);
+  el.textContent = "";
+  let i = 0;
+  const CHARS_PER_TICK = 3;
+  typingTimer = setInterval(() => {
+    i += CHARS_PER_TICK;
+    el.textContent = text.slice(0, i);
+    el.scrollTop = el.scrollHeight;
+    if (i >= text.length) {
+      el.textContent = text;
+      clearInterval(typingTimer);
+      typingTimer = null;
+    }
+  }, 12);
 }
 
 function renderClaudeHint(text) {
@@ -321,6 +414,11 @@ function wireEvents() {
   document.addEventListener("click", (ev) => {
     const btn = ev.target.closest("[data-action]");
     if (!btn) return;
+    btn.classList.remove("flash");
+    // eslint-disable-next-line no-unused-expressions
+    btn.offsetWidth; // restart the animation even on rapid repeat clicks
+    btn.classList.add("flash");
+    setTimeout(() => btn.classList.remove("flash"), 400);
     const action = ACTIONS[btn.dataset.action];
     if (action) action();
   });
@@ -363,6 +461,8 @@ function boot() {
   if (state.projects.list.length === 0) handleRefreshProjects();
   restartAutoPoll();
   refreshClaudeHint();
+  initGeoSpinners();
+  requestAnimationFrame(tickGeoSpinners);
 }
 
 document.addEventListener("DOMContentLoaded", boot);

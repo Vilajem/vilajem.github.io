@@ -83,7 +83,21 @@ body::before {
 }
 
 .app-header h1 .prompt { color: var(--text-muted); }
-.app-header h1 .accent-text { color: var(--accent); text-shadow: 0 0 8px var(--accent-dim); }
+.app-header h1 .accent-text {
+  color: var(--accent);
+  text-shadow: 0 0 8px var(--accent-dim);
+  display: inline-block;
+  overflow: hidden;
+  white-space: nowrap;
+  vertical-align: bottom;
+  width: 14ch;
+  animation: type-header 1s steps(14, end) 0.15s both;
+}
+
+@keyframes type-header {
+  from { width: 0; }
+  to { width: 14ch; }
+}
 
 .app-header h1::after {
   content: "";
@@ -116,9 +130,18 @@ body::before {
 .progress-fill {
   height: 100%;
   width: 0%;
-  background: var(--accent);
+  background-color: var(--accent);
+  background-image: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.65), transparent);
+  background-size: 50px 100%;
+  background-repeat: no-repeat;
   box-shadow: 0 0 10px var(--accent);
   transition: width 0.35s ease;
+  animation: progress-scan 1.6s linear infinite;
+}
+
+@keyframes progress-scan {
+  from { background-position: -50px 0; }
+  to { background-position: 260px 0; }
 }
 
 .icon-btn {
@@ -165,6 +188,20 @@ body::before {
   position: relative;
   box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.02);
   transition: border-color 0.2s ease, box-shadow 0.2s ease;
+  animation: card-in 0.45s ease both;
+}
+
+.stage-list .stage-card:nth-child(1) { animation-delay: 0.03s; }
+.stage-list .stage-card:nth-child(2) { animation-delay: 0.08s; }
+.stage-list .stage-card:nth-child(3) { animation-delay: 0.13s; }
+.stage-list .stage-card:nth-child(4) { animation-delay: 0.18s; }
+.stage-list .stage-card:nth-child(5) { animation-delay: 0.23s; }
+.stage-list .stage-card:nth-child(6) { animation-delay: 0.28s; }
+.stage-list .stage-card:nth-child(7) { animation-delay: 0.33s; }
+
+@keyframes card-in {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
 }
 
 .stage-card::before {
@@ -271,8 +308,22 @@ body::before {
   font-size: 0.8rem;
   margin: 0.25rem 0 0.85rem;
   color: var(--text);
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
 }
-.stage-feedback::before { content: "> "; color: var(--accent); }
+.stage-feedback::before { content: ">"; color: var(--accent); }
+
+.thinking-spinner {
+  display: none;
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
+}
+.thinking-spinner.is-active { display: inline-block; }
+.geo-spinner-svg { width: 100%; height: 100%; overflow: visible; }
+.geo-dot { fill: var(--accent); filter: drop-shadow(0 0 3px var(--accent)); }
+.geo-line { stroke: var(--accent); stroke-width: 0.6; }
 
 .claude-hint {
   font-size: 0.75rem;
@@ -321,6 +372,15 @@ button:not(.icon-btn)::before { content: "[ "; color: var(--text-muted); }
 button:not(.icon-btn)::after { content: " ]"; color: var(--text-muted); }
 
 button:hover:not(:disabled) { box-shadow: 0 0 10px var(--accent-dim); border-color: var(--border-strong); }
+button:active:not(:disabled) { transform: scale(0.96); }
+
+button.flash { animation: btn-flash 0.4s ease-out; }
+
+@keyframes btn-flash {
+  0% { box-shadow: 0 0 0 rgba(41, 197, 246, 0); }
+  30% { box-shadow: 0 0 22px rgba(41, 197, 246, 0.6); }
+  100% { box-shadow: 0 0 10px var(--accent-dim); }
+}
 
 button.primary {
   background: var(--accent-dim);
@@ -357,6 +417,11 @@ button:disabled { opacity: 0.4; cursor: not-allowed; }
   margin-top: 0.85rem;
   text-shadow: 0 0 6px rgba(41, 197, 246, 0.25);
 }
+.output-panel::after {
+  content: "▍";
+  color: var(--accent);
+  animation: blink 1s steps(1) infinite;
+}
 
 #log-panel {
   margin: 1.5rem 1rem 0;
@@ -384,7 +449,12 @@ button:disabled { opacity: 0.4; cursor: not-allowed; }
   font-size: 0.72rem;
 }
 
-.log-row { display: flex; gap: 0.5rem; flex-wrap: wrap; }
+.log-row { display: flex; gap: 0.5rem; flex-wrap: wrap; animation: row-in 0.25s ease; }
+
+@keyframes row-in {
+  from { opacity: 0; transform: translateX(-4px); }
+  to { opacity: 1; transform: translateX(0); }
+}
 .log-row .ok { color: var(--accent); }
 .log-row .fail { color: var(--error); }
 .log-row .muted { color: var(--text-muted); }
