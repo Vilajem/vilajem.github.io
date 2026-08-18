@@ -177,22 +177,6 @@ function renderAll() {
 
 // -- actions ---------------------------------------------------------------
 
-async function handleWake() {
-  setStageStatus("wake", "in-progress", "Ébresztés folyamatban…");
-  renderStage("wake");
-  const res = await api.wake();
-  if (res.ok) {
-    setStageStatus(
-      "wake",
-      "in-progress",
-      `Csomag elküldve (${fmtTime(res.sentAt)}). Várj kb. 30-60 mp-et, majd ellenőrizd az online állapotot.`
-    );
-  } else {
-    setStageStatus("wake", "error", res.message || res.error || "Ismeretlen hiba");
-  }
-  renderStage("wake");
-}
-
 async function handleCheckStatus() {
   const res = await api.status();
   if (!res.ok) {
@@ -396,7 +380,6 @@ async function handleShutdown() {
 }
 
 const ACTIONS = {
-  wake: handleWake,
   "check-status": handleCheckStatus,
   "vscode-start": handleVscodeStart,
   "create-project": handleCreateProject,
@@ -405,6 +388,7 @@ const ACTIONS = {
   "claude-start": handleClaudeStart,
   "claude-remote-control": handleClaudeRemoteControl,
   "claude-output": handleClaudeOutput,
+  "refresh-projects": handleRefreshProjects,
   shutdown: handleShutdown,
   "config-refresh": handleConfigRefresh,
   "config-save": handleConfigSave,

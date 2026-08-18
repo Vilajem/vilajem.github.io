@@ -40,7 +40,6 @@ async function apiCall(method, path, body) {
 }
 
 export const api = {
-  wake: () => apiCall("POST", "/api/wake", {}),
   status: () => apiCall("GET", "/api/status"),
   listProjects: () => apiCall("GET", "/api/projects"),
   createProject: (name) => apiCall("POST", "/api/projects", { name }),

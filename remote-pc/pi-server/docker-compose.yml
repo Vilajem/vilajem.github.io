@@ -1,0 +1,10 @@
+services:
+  remote-pc-gateway:
+    build:
+      context: ..
+      dockerfile: pi-server/Dockerfile
+    container_name: remote-pc-gateway
+    network_mode: host
+    volumes:
+      - ./config.json:/app/pi-server/config.json:ro
+    restart: unless-stopped

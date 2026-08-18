@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 """Always-on Raspberry Pi gateway.
 
-Serves the iPhone control webpage (remote-pc/public/), sends Wake-on-LAN
-packets to the home PC, and proxies project / VS Code / Claude Code
-commands to the Windows agent over the Tailscale network. Stdlib only.
+Serves the iPhone control webpage (remote-pc/public/) and proxies
+project / VS Code / Claude Code commands to the Windows agent over the
+Tailscale network. Stdlib only.
 """
 
 from __future__ import annotations
@@ -56,16 +56,6 @@ CONFIG = load_config()
 
 def now_iso() -> str:
     return datetime.now(timezone.utc).isoformat()
-
-
-def send_wake_on_lan(mac: str, broadcast_ip: str, port: int = 9) -> None:
-    mac_bytes = bytes.fromhex(mac.replace(":", "").replace("-", ""))
-    if len(mac_bytes) != 6:
-        raise ValueError("MAC address must resolve to 6 bytes")
-    packet = b"\xff" * 6 + mac_bytes * 16
-    with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as sock:
-        sock.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
-        sock.sendto(packet, (broadcast_ip, port))
 
 
 def agent_request(method: str, path: str, body: dict | None = None, timeout: float = 5.0):
@@ -127,25 +117,12 @@ class Handler(BaseHTTPRequestHandler):
 
     def do_POST(self):
         path = self.path.split("?", 1)[0]
-        if path == "/api/wake":
-            self._handle_wake()
-        elif path in PROXY_PATHS:
+        if path in PROXY_PATHS:
             self._handle_proxy("POST", path)
         else:
             self._send_json(404, {"ok": False, "error": "not_found"})
 
     # -- handlers ------------------------------------------------------
-    def _handle_wake(self):
-        if not self._check_token():
-            self._send_json(401, {"ok": False, "error": "unauthorized"})
-            return
-        try:
-            send_wake_on_lan(CONFIG["target_mac"], CONFIG["broadcast_ip"])
-        except Exception as e:
-            self._send_json(500, {"ok": False, "error": "wake_failed", "message": str(e)})
-            return
-        self._send_json(200, {"ok": True, "sentAt": now_iso()})
-
     def _handle_status(self):
         if not self._check_token():
             self._send_json(401, {"ok": False, "error": "unauthorized"})
