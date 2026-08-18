@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="hu">
 <head>
 <meta charset="UTF-8">
@@ -21,15 +21,15 @@
   <div class="progress" role="progressbar" aria-label="Folyamat" aria-valuemin="0" aria-valuemax="7">
     <div class="progress-fill" id="progress-fill"></div>
   </div>
-  <button id="settings-btn" class="icon-btn" aria-label="BeĂˇllĂ­tĂˇsok">âš™</button>
+  <button id="settings-btn" class="icon-btn" aria-label="Beállítások">⚙</button>
 </header>
 
 <div class="toolbar">
-  <label for="project-select">AktĂ­v mappa</label>
+  <label for="project-select">Aktív mappa</label>
   <select id="project-select">
-    <option value="">â€” vĂˇlassz mappĂˇt â€”</option>
+    <option value="">— válassz mappát —</option>
   </select>
-  <button id="refresh-projects" class="ghost small" data-action="refresh-projects">FrissĂ­tĂ©s</button>
+  <button id="refresh-projects" class="ghost small" data-action="refresh-projects">Frissítés</button>
 </div>
 
 <main class="stage-list">
@@ -37,70 +37,70 @@
   <section class="stage-card" data-stage="wake" data-status="idle" data-index="01/07">
     <div class="stage-head">
       <svg class="stage-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M13 2 4 14h6l-1 8 9-12h-6z" fill="currentColor"/></svg>
-      <h2>GĂ©p Ăˇllapota</h2>
+      <h2>Gép állapota</h2>
       <span class="badge" data-role="badge">IDLE</span>
     </div>
-    <p class="stage-desc">Ezen a gĂ©pen nincs tĂˇmogatott tĂˇvoli felĂ©bresztĂ©s â€” kapcsold be fizikailag, majd ellenĹ‘rizd itt, hogy online van-e.</p>
-    <p class="stage-feedback"><span class="thinking-spinner" data-role="spinner"></span><span data-role="feedback">MĂ©g nem tĂ¶rtĂ©nt semmi.</span></p>
+    <p class="stage-desc">Ezen a gépen nincs támogatott távoli felébresztés — kapcsold be fizikailag, majd ellenőrizd itt, hogy online van-e.</p>
+    <p class="stage-feedback"><span class="thinking-spinner" data-role="spinner"></span><span data-role="feedback">Még nem történt semmi.</span></p>
     <div class="stage-actions">
-      <button data-action="check-status" class="primary">Online ellenĹ‘rzĂ©s</button>
+      <button data-action="check-status" class="primary">Online ellenőrzés</button>
     </div>
   </section>
 
   <section class="stage-card" data-stage="vscode-start" data-status="idle" data-index="02/07">
     <div class="stage-head">
       <svg class="stage-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 4 2 12l6 8M16 4l6 8-6 8" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-      <h2>VS Code elindĂ­tĂˇsa</h2>
+      <h2>VS Code elindítása</h2>
       <span class="badge" data-role="badge">IDLE</span>
     </div>
-    <p class="stage-desc">VS Code elindĂ­tĂˇsa mappa megnyitĂˇsa nĂ©lkĂĽl.</p>
-    <p class="stage-feedback"><span class="thinking-spinner" data-role="spinner"></span><span data-role="feedback">MĂ©g nem tĂ¶rtĂ©nt semmi.</span></p>
+    <p class="stage-desc">VS Code elindítása mappa megnyitása nélkül.</p>
+    <p class="stage-feedback"><span class="thinking-spinner" data-role="spinner"></span><span data-role="feedback">Még nem történt semmi.</span></p>
     <div class="stage-actions">
-      <button data-action="vscode-start" class="primary">IndĂ­tĂˇs</button>
+      <button data-action="vscode-start" class="primary">Indítás</button>
     </div>
   </section>
 
   <section class="stage-card" data-stage="create-project" data-status="idle" data-index="03/07">
     <div class="stage-head">
       <svg class="stage-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2Z" fill="none" stroke="currentColor" stroke-width="2"/><path d="M12 11v5M9.5 13.5h5" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
-      <h2>Ăšj projekt mappa</h2>
+      <h2>Új projekt mappa</h2>
       <span class="badge" data-role="badge">IDLE</span>
     </div>
-    <p class="stage-desc">A Windows agent konfigurĂˇciĂłjĂˇban beĂˇllĂ­tott projects-root alĂˇ kerĂĽl.</p>
-    <p class="stage-feedback"><span class="thinking-spinner" data-role="spinner"></span><span data-role="feedback">MĂ©g nem tĂ¶rtĂ©nt semmi.</span></p>
+    <p class="stage-desc">A Windows agent konfigurációjában beállított projects-root alá kerül.</p>
+    <p class="stage-feedback"><span class="thinking-spinner" data-role="spinner"></span><span data-role="feedback">Még nem történt semmi.</span></p>
     <div class="stage-actions">
       <input type="text" id="new-project-name" placeholder="pl. weather-app" autocapitalize="off" autocorrect="off" spellcheck="false">
-      <button data-action="create-project" class="primary">LĂ©trehozĂˇs</button>
+      <button data-action="create-project" class="primary">Létrehozás</button>
     </div>
   </section>
 
   <section class="stage-card" data-stage="open-project" data-status="idle" data-index="04/07">
     <div class="stage-head">
       <svg class="stage-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 8a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2H3Z" fill="none" stroke="currentColor" stroke-width="2"/><path d="M3 8l1.5 9a2 2 0 0 0 2 1.5h11a2 2 0 0 0 2-1.5L21 10H3Z" fill="none" stroke="currentColor" stroke-width="2"/></svg>
-      <h2>Mappa megnyitĂˇsa</h2>
+      <h2>Mappa megnyitása</h2>
       <span class="badge" data-role="badge">IDLE</span>
     </div>
-    <p class="stage-desc">A fent kivĂˇlasztott mappa megnyitĂˇsa VS Code-ban.</p>
-    <p class="stage-feedback"><span class="thinking-spinner" data-role="spinner"></span><span data-role="feedback">MĂ©g nem tĂ¶rtĂ©nt semmi.</span></p>
+    <p class="stage-desc">A fent kiválasztott mappa megnyitása VS Code-ban.</p>
+    <p class="stage-feedback"><span class="thinking-spinner" data-role="spinner"></span><span data-role="feedback">Még nem történt semmi.</span></p>
     <div class="stage-actions">
-      <button data-action="open-project" class="primary">MegnyitĂˇs</button>
+      <button data-action="open-project" class="primary">Megnyitás</button>
     </div>
   </section>
 
   <section class="stage-card" data-stage="trust-folder" data-status="idle" data-index="05/07">
     <div class="stage-head">
       <svg class="stage-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l7 3v6c0 5-3.5 7.5-7 9-3.5-1.5-7-4-7-9V6Z" fill="none" stroke="currentColor" stroke-width="2"/><path d="M9 12l2 2 4-4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-      <h2>Mappa megbĂ­zhatĂłvĂˇ tĂ©tele</h2>
+      <h2>Mappa megbízhatóvá tétele</h2>
       <span class="badge" data-role="badge">IDLE</span>
     </div>
     <p class="stage-desc">
-      A megnyitĂˇs mindig <code>--disable-workspace-trust</code>-tal fut, tehĂˇt ez a legtĂ¶bbszĂ¶r
-      felesleges â€” de ha a trust-dialĂłgus mĂ©gis megjelenne, ez a gomb ĂşjrakĂĽldi a parancsot a
-      kivĂˇlasztott mappĂˇra.
+      A megnyitás mindig <code>--disable-workspace-trust</code>-tal fut, tehát ez a legtöbbször
+      felesleges — de ha a trust-dialógus mégis megjelenne, ez a gomb újraküldi a parancsot a
+      kiválasztott mappára.
     </p>
-    <p class="stage-feedback"><span class="thinking-spinner" data-role="spinner"></span><span data-role="feedback">MĂ©g nem tĂ¶rtĂ©nt semmi.</span></p>
+    <p class="stage-feedback"><span class="thinking-spinner" data-role="spinner"></span><span data-role="feedback">Még nem történt semmi.</span></p>
     <div class="stage-actions">
-      <button data-action="trust-folder" class="primary">MegbĂ­zhatĂłvĂˇ tĂ©tel</button>
+      <button data-action="trust-folder" class="primary">Megbízhatóvá tétel</button>
     </div>
   </section>
 
@@ -111,77 +111,77 @@
       <span class="badge" data-role="badge">IDLE</span>
     </div>
     <p class="stage-desc">
-      ElindĂ­tja a <code>claude</code>-ot a kivĂˇlasztott mappĂˇban, majd elkĂĽldi neki a
-      <code>/remote-control</code> parancsot. UtĂˇna a claude.ai/code appbĂłl tudsz rĂˇcsatlakozni.
+      Elindítja a <code>claude</code>-ot a kiválasztott mappában, majd elküldi neki a
+      <code>/remote-control</code> parancsot. Utána a claude.ai/code appból tudsz rácsatlakozni.
     </p>
-    <p class="stage-feedback"><span class="thinking-spinner" data-role="spinner"></span><span data-role="feedback">MĂ©g nem tĂ¶rtĂ©nt semmi.</span></p>
+    <p class="stage-feedback"><span class="thinking-spinner" data-role="spinner"></span><span data-role="feedback">Még nem történt semmi.</span></p>
     <p class="claude-hint" data-role="claude-hint"></p>
     <div class="stage-actions">
-      <button data-action="claude-start" class="primary">Claude indĂ­tĂˇsa</button>
-      <button data-action="claude-remote-control" class="primary">Remote Control aktivĂˇlĂˇsa</button>
-      <button data-action="claude-output" class="ghost">Kimenet frissĂ­tĂ©se</button>
+      <button data-action="claude-start" class="primary">Claude indítása</button>
+      <button data-action="claude-remote-control" class="primary">Remote Control aktiválása</button>
+      <button data-action="claude-output" class="ghost">Kimenet frissítése</button>
     </div>
-    <pre class="output-panel" data-role="claude-output">(mĂ©g nincs kimenet)</pre>
+    <pre class="output-panel" data-role="claude-output">(még nincs kimenet)</pre>
   </section>
 
   <section class="stage-card" data-stage="shutdown" data-status="idle" data-index="07/07">
     <div class="stage-head">
       <svg class="stage-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2v9" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><path d="M6.5 6a8 8 0 1 0 11 0" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
-      <h2>SzĂˇmĂ­tĂłgĂ©p leĂˇllĂ­tĂˇsa</h2>
+      <h2>Számítógép leállítása</h2>
       <span class="badge" data-role="badge">IDLE</span>
     </div>
-    <p class="stage-desc">LeĂˇllĂ­tja a Windows gĂ©pet. MegerĹ‘sĂ­tĂ©st kĂ©r, vĂ©letlen koppintĂˇs nem indĂ­tja el.</p>
-    <p class="stage-feedback"><span class="thinking-spinner" data-role="spinner"></span><span data-role="feedback">MĂ©g nem tĂ¶rtĂ©nt semmi.</span></p>
+    <p class="stage-desc">Leállítja a Windows gépet. Megerősítést kér, véletlen koppintás nem indítja el.</p>
+    <p class="stage-feedback"><span class="thinking-spinner" data-role="spinner"></span><span data-role="feedback">Még nem történt semmi.</span></p>
     <div class="stage-actions">
-      <button data-action="shutdown" class="danger">LeĂˇllĂ­tĂˇs</button>
+      <button data-action="shutdown" class="danger">Leállítás</button>
     </div>
   </section>
 
 </main>
 
 <details id="log-panel">
-  <summary>AktivitĂˇs naplĂł</summary>
+  <summary>Aktivitás napló</summary>
   <div id="log-list"></div>
-  <button id="clear-log" class="ghost small">NaplĂł tĂ¶rlĂ©se</button>
+  <button id="clear-log" class="ghost small">Napló törlése</button>
 </details>
 
 <dialog id="settings-dialog">
   <form method="dialog" id="settings-form">
-    <h2>BeĂˇllĂ­tĂˇsok</h2>
+    <h2>Beállítások</h2>
 
     <label for="setting-phone-token">Phone token</label>
     <input type="password" id="setting-phone-token" autocapitalize="off" autocorrect="off" spellcheck="false">
 
-    <label for="setting-projects-root">Projekt mappĂˇk helye (a Windows gĂ©pen)</label>
+    <label for="setting-projects-root">Projekt mappák helye (a Windows gépen)</label>
     <input type="text" id="setting-projects-root" placeholder="pl. C:\Users\name\Projects" autocapitalize="off" autocorrect="off" spellcheck="false">
     <div class="stage-actions">
-      <button type="button" data-action="config-refresh" class="ghost small">AktuĂˇlis lekĂ©rdezĂ©se</button>
-      <button type="button" data-action="config-save" class="ghost small">MentĂ©s a gĂ©pre</button>
+      <button type="button" data-action="config-refresh" class="ghost small">Aktuális lekérdezése</button>
+      <button type="button" data-action="config-save" class="ghost small">Mentés a gépre</button>
     </div>
     <p class="config-status" id="config-status"></p>
 
-    <label for="setting-poll-interval">Automata frissĂ­tĂ©s (mp)</label>
+    <label for="setting-poll-interval">Automata frissítés (mp)</label>
     <input type="number" id="setting-poll-interval" min="2" max="60">
 
     <label class="checkbox-row">
       <input type="checkbox" id="setting-auto-poll">
-      Online Ăˇllapot / Claude kimenet automatikus frissĂ­tĂ©se
+      Online állapot / Claude kimenet automatikus frissítése
     </label>
 
     <details class="advanced-settings">
       <summary>Fejlett</summary>
 
-      <label for="setting-api-base-url">API base URL (ĂĽresen = ugyanaz az origin)</label>
+      <label for="setting-api-base-url">API base URL (üresen = ugyanaz az origin)</label>
       <input type="text" id="setting-api-base-url" placeholder="pl. https://pi.example.ts.net">
 
-      <label for="setting-rdp-template">Remote desktop deep-link (troubleshootinghoz, opcionĂˇlis)</label>
+      <label for="setting-rdp-template">Remote desktop deep-link (troubleshootinghoz, opcionális)</label>
       <input type="text" id="setting-rdp-template" placeholder="pl. anydesk:1234567890">
-      <button type="button" id="open-rdp-link" class="ghost small">MegnyitĂˇs</button>
+      <button type="button" id="open-rdp-link" class="ghost small">Megnyitás</button>
     </details>
 
     <div class="dialog-actions">
-      <button type="button" id="settings-clear" class="ghost">BeĂˇllĂ­tĂˇsok tĂ¶rlĂ©se</button>
-      <button type="submit" id="settings-save" class="primary">MentĂ©s</button>
+      <button type="button" id="settings-clear" class="ghost">Beállítások törlése</button>
+      <button type="submit" id="settings-save" class="primary">Mentés</button>
     </div>
   </form>
 </dialog>
