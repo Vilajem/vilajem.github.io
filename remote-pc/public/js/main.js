@@ -291,42 +291,26 @@ async function refreshClaudeHint() {
   }
 }
 
-async function handleClaudeStart() {
+async function handleClaudeRemoteControl() {
   const folder = state.projects.selected;
   if (!folder) {
     setStageStatus("remote-control", "error", "Előbb válassz mappát a fenti listából.");
     renderStage("remote-control");
     return;
   }
-  setStageStatus("remote-control", "in-progress", `Claude indítása: ${folder}…`);
+  setStageStatus("remote-control", "in-progress", `Remote Control indítása: ${folder}…`);
   renderStage("remote-control");
-  const res = await api.claudeStart(folder);
+  const res = await api.claudeRemoteControl(folder);
   if (res.ok) {
     setStageStatus(
       "remote-control",
-      "in-progress",
-      res.alreadyRunning ? `Claude már fut ebben a mappában (${folder}).` : `Claude elindítva (${folder}).`
+      "done",
+      res.alreadyRunning
+        ? `Már fut ebben a mappában (${folder}).`
+        : `Elindítva (${folder}). Nyisd meg a claude.ai/code appot a csatlakozáshoz.`
     );
     await handleClaudeOutput();
     await refreshClaudeHint();
-  } else {
-    setStageStatus("remote-control", "error", res.message || res.error);
-  }
-  renderStage("remote-control");
-  updateProgressBar();
-}
-
-async function handleClaudeRemoteControl() {
-  setStageStatus("remote-control", "in-progress", "Remote Control aktiválása…");
-  renderStage("remote-control");
-  const res = await api.claudeRemoteControl();
-  if (res.ok) {
-    state.claude.lines = res.recentOutput || [];
-    save();
-    renderClaudeOutput();
-    setStageStatus("remote-control", "done", "Remote Control parancs elküldve. Nyisd meg a claude.ai/code appot a csatlakozáshoz.");
-  } else if (res.error === "not_running") {
-    setStageStatus("remote-control", "needs-attention", "Nincs futó Claude — előbb indítsd el a fenti gombbal.");
   } else {
     setStageStatus("remote-control", "error", res.message || res.error);
   }
@@ -385,7 +369,6 @@ const ACTIONS = {
   "create-project": handleCreateProject,
   "open-project": handleOpenProject,
   "trust-folder": handleTrustFolder,
-  "claude-start": handleClaudeStart,
   "claude-remote-control": handleClaudeRemoteControl,
   "claude-output": handleClaudeOutput,
   "refresh-projects": handleRefreshProjects,

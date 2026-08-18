@@ -35,7 +35,6 @@ CONTENT_TYPES = {
 PROXY_PATHS = {
     "/api/projects",
     "/api/vscode/open",
-    "/api/claude/start",
     "/api/claude/remote-control",
     "/api/claude/output",
     "/api/shutdown",

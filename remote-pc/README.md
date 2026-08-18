@@ -24,7 +24,6 @@ Raspberry Pi / always-on Linux gép — pi-server/server.py (Docker, host networ
   - GET  /api/status                  windows agent elérhető-e
   - GET/POST /api/projects            proxyzva a Windows agent felé
   - POST /api/vscode/open             proxyzva
-  - POST /api/claude/start            proxyzva
   - POST /api/claude/remote-control   proxyzva
   - GET  /api/claude/output           proxyzva
   - GET  /api/claude-status           proxyzva
@@ -34,7 +33,9 @@ Raspberry Pi / always-on Linux gép — pi-server/server.py (Docker, host networ
 Windows PC — windows-agent/agent.py (Task Scheduler indítja "At log on"-nal)
   - listázza/létrehozza a projekt mappákat
   - `code --disable-workspace-trust [mappa]` — VS Code indítás, trust-dialógus nélkül
-  - `claude` subprocess indítása a mappában, majd `/remote-control` küldése a stdin-re
+  - előzetesen elfogadja a claude CLI workspace-trust dialógusát a mappára
+    (~/.claude.json-ban hasTrustDialogAccepted), majd `claude remote-control
+    --name <mappa>` indítása egy lépésben
   - `shutdown /s /t <mp>` — gép leállítása
 ```
 
@@ -44,15 +45,19 @@ Az első tervben a mappa-trust és a Claude bejelentkezés szándékosan manuál
 volna (AnyDesk-kel ránézve a képernyőre). Ezt a felhasználó elvetette: minden lépés
 gombbal, szkriptelve fusson. Ez két konkrét dolgot jelent:
 
-- **Trust**: a `code` mindig a hivatalos, dokumentált `--disable-workspace-trust`
-  kapcsolóval indul, ami kikapcsolja a trust-dialógust az adott ablakra. Ez nem trükk —
-  pontosan erre a célra (automatizált/scriptelt VS Code indítás) létezik.
-- **Bejelentkezés / `/remote-control`**: a Windows agent maga indítja el a `claude`
-  CLI-t a kiválasztott mappában (nem a VS Code terminálján keresztül), és automatikusan
-  beírja neki a `/remote-control` parancsot. Ez a gyakorlatban **nem igényel
-  bejelentkezést**, mert a Claude Code CLI egyszeri interaktív `claude login` után a
-  hitelesítést a `%USERPROFILE%\.claude\.credentials.json` fájlban tárolja, és azt
-  minden induláskor automatikusan felhasználja.
+- **Trust (VS Code)**: a `code` mindig a hivatalos, dokumentált
+  `--disable-workspace-trust` kapcsolóval indul, ami kikapcsolja a trust-dialógust az
+  adott ablakra. Ez nem trükk — pontosan erre a célra (automatizált/scriptelt VS Code
+  indítás) létezik.
+- **Trust (Claude CLI) / Remote Control**: a `claude` CLI-nek saját, VS Code-tól
+  független workspace-trust dialógusa van, ami csak interaktív terminálban működik —
+  a windows-agent nem fut interaktív terminálban, úgyhogy a dialógus helyett előre
+  beírja a jóváhagyást a `~/.claude.json` `projects.<mappa>.hasTrustDialogAccepted`
+  mezőjébe, majd egy lépésben elindítja a `claude remote-control --name <mappa>`-t
+  (a hivatalos szerver-mód, ld. [Claude Code Remote Control dokumentáció](https://code.claude.com/docs/en/remote-control)).
+  Ez a gyakorlatban **nem igényel bejelentkezést**, mert a Claude Code CLI egyszeri
+  interaktív `claude login` után a hitelesítést a `%USERPROFILE%\.claude\.credentials.json`
+  fájlban tárolja, és azt minden induláskor automatikusan felhasználja.
 
 **Tudatos biztonsági kompromisszum**: mivel a trust-dialógus ki van kapcsolva, bárki,
 aki ismeri a `phone_token`-t, tetszőleges mappában tud parancsot futtató programot
@@ -96,7 +101,12 @@ telepítve unattended access-szel) ránézni a gépre és újra bejelentkezni.
    - `projects_root`: hova kerüljenek az új projekt mappák (ez csak a kezdeti érték —
      a telefonos Beállítások panelről bármikor átírható; az aktuális érték a
      `windows-agent/runtime-config.json`-ban perzisztálódik, agent-újraindítást is túlél)
-   - `code_command` / `claude_command`: hagyd `code`/`claude`-on, ha PATH-on vannak
+   - `code_command` / `claude_command`: ha `code`/`claude` npm-mel vagy a felhasználói
+     telepítőjükkel kerültek fel, gyakran csak a *felhasználói* PATH-on vannak, nem a
+     gépszintűn, amit a Task Scheduler-ből induló folyamat örököl — ha `vscode/open`
+     vagy `remote-control` `WinError 2`-t ad, cseréld ezeket abszolút elérési útra,
+     pl. `C:\\Users\\<name>\\AppData\\Local\\Programs\\Microsoft VS Code\\bin\\code.cmd`
+     és `C:\\Users\\<name>\\AppData\\Roaming\\npm\\claude.cmd`
 7. Regisztráld az agentet: nyiss egy admin PowerShell-t a `windows-agent` mappában, és
    futtasd: `powershell -ExecutionPolicy Bypass -File register-task.ps1`
 8. Nyiss tűzfal-szabályt, ami csak a Tailscale tartományból engedi be az agent portját:
@@ -162,7 +172,7 @@ automatikus láncolás. Tipikus menet:
    **Online ellenőrzés**.
 2. **Új projekt mappa létrehozása** (vagy válassz meglévőt a felső legördülőből).
 3. **Mappa megnyitása VS Code-ban**.
-4. **Remote Control csatlakoztatása**: Claude indítása → Remote Control aktiválása.
+4. **Remote Control indítása** (egy gomb).
 5. Nyisd meg a claude.ai/code appot / weboldalt a telefonon, és csatlakozz a futó
    session-höz.
 6. Ha végeztél: **Számítógép leállítása** (megerősítést kér), majd fizikailag
@@ -184,8 +194,8 @@ eredményét — ide érdemes nézni, ha valami nem úgy viselkedik, ahogy várt
   ezt a felhasználó tudatosan nem kérte.
 - A `%USERPROFILE%\.claude\.credentials.json` alapú bejelentkezés-heurisztika csak
   jelzés, nem garancia — ha a Claude Code egy jövőbeli verziója máshova teszi ezt a
-  fájlt, a `hint` mező pontatlan lesz, de a funkcionalitás (Claude indítása,
-  remote-control) ettől függetlenül működik, csak a kijelzett info lehet elavult.
+  fájlt, a `hint` mező pontatlan lesz, de a funkcionalitás (remote-control indítása)
+  ettől függetlenül működik, csak a kijelzett info lehet elavult.
 - A Windows-oldali beüzemelés (Python, Claude CLI, Task Scheduler, tűzfalszabály)
   megtörtént és ellenőrzött a célgépen. A Raspberry Pi (`pi-server`) telepítése és a
   végponti (iPhone → Pi → Windows agent) forgalom élesben tesztelése még hátravan.

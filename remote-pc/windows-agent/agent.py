@@ -97,6 +97,32 @@ def set_projects_root(raw_path: str) -> Path:
 claude_lock = threading.Lock()
 claude_state = {"proc": None, "folder": None, "output": collections.deque(maxlen=OUTPUT_MAXLEN)}
 
+CLAUDE_JSON_PATH = Path.home() / ".claude.json"
+
+
+def _ensure_workspace_trusted(target: Path) -> None:
+    """Pre-accept the claude CLI's workspace trust dialog for this folder.
+
+    `claude remote-control` refuses to start in an untrusted directory and
+    the trust dialog only works in a real interactive terminal, which this
+    agent doesn't have — so mirror what accepting it does by hand: set
+    hasTrustDialogAccepted for this folder in ~/.claude.json. Uses forward
+    slashes as the project key, matching what the CLI itself writes.
+    """
+    key = target.resolve().as_posix()
+    try:
+        with CLAUDE_JSON_PATH.open(encoding="utf-8") as f:
+            data = json.load(f)
+    except (FileNotFoundError, json.JSONDecodeError):
+        data = {}
+    projects = data.setdefault("projects", {})
+    entry = projects.setdefault(key, {})
+    if entry.get("hasTrustDialogAccepted"):
+        return
+    entry["hasTrustDialogAccepted"] = True
+    with CLAUDE_JSON_PATH.open("w", encoding="utf-8") as f:
+        json.dump(data, f, indent=2)
+
 
 def _reader_loop(proc: subprocess.Popen, output: collections.deque) -> None:
     try:
@@ -110,7 +136,7 @@ def _reader_loop(proc: subprocess.Popen, output: collections.deque) -> None:
             output.append(f"[agent] reader stopped: {e}")
 
 
-def start_claude(folder_name: str) -> dict:
+def start_remote_control(folder_name: str) -> dict:
     target = resolve_project(folder_name)
     if not target.is_dir():
         raise FileNotFoundError(folder_name)
@@ -118,9 +144,10 @@ def start_claude(folder_name: str) -> dict:
         proc = claude_state["proc"]
         if proc is not None and proc.poll() is None and claude_state["folder"] == folder_name:
             return {"alreadyRunning": True}
+        _ensure_workspace_trusted(target)
         claude_cmd = CONFIG.get("claude_command", "claude")
         new_proc = subprocess.Popen(
-            [claude_cmd],
+            [claude_cmd, "remote-control", "--name", folder_name],
             cwd=str(target),
             stdin=subprocess.PIPE,
             stdout=subprocess.PIPE,
@@ -134,18 +161,6 @@ def start_claude(folder_name: str) -> dict:
         claude_state["output"] = output
         threading.Thread(target=_reader_loop, args=(new_proc, output), daemon=True).start()
     return {"alreadyRunning": False}
-
-
-def send_remote_control() -> list[str] | None:
-    with claude_lock:
-        proc = claude_state["proc"]
-        if proc is None or proc.poll() is not None:
-            return None
-        proc.stdin.write("/remote-control\n")
-        proc.stdin.flush()
-    time.sleep(1.5)
-    with claude_lock:
-        return list(claude_state["output"])[-20:]
 
 
 def get_claude_output() -> tuple[bool, list[str]]:
@@ -228,8 +243,6 @@ class Handler(BaseHTTPRequestHandler):
             self._create_project()
         elif path == "/api/vscode/open":
             self._open_vscode()
-        elif path == "/api/claude/start":
-            self._start_claude()
         elif path == "/api/claude/remote-control":
             self._remote_control()
         elif path == "/api/shutdown":
@@ -276,11 +289,11 @@ class Handler(BaseHTTPRequestHandler):
             return
         self._send_json(200, {"ok": True, "project": folder, "launchedAt": now_iso()})
 
-    def _start_claude(self):
+    def _remote_control(self):
         body = self._read_json()
         folder = body.get("folder", "")
         try:
-            result = start_claude(folder)
+            result = start_remote_control(folder)
         except ValueError:
             self._send_json(400, {"ok": False, "error": "invalid_name"})
             return
@@ -291,17 +304,6 @@ class Handler(BaseHTTPRequestHandler):
             self._send_json(500, {"ok": False, "error": "launch_failed", "message": str(e)})
             return
         self._send_json(200, {"ok": True, "startedAt": now_iso(), **result})
-
-    def _remote_control(self):
-        try:
-            recent = send_remote_control()
-        except OSError as e:
-            self._send_json(500, {"ok": False, "error": "write_failed", "message": str(e)})
-            return
-        if recent is None:
-            self._send_json(409, {"ok": False, "error": "not_running"})
-            return
-        self._send_json(200, {"ok": True, "recentOutput": recent})
 
     def _shutdown(self):
         body = self._read_json()
