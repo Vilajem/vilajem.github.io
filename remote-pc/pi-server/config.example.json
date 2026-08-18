@@ -1,0 +1,9 @@
+{
+  "listen_port": 8787,
+  "phone_token": "change-me-to-a-long-random-string",
+  "target_mac": "AA:BB:CC:DD:EE:FF",
+  "broadcast_ip": "192.168.1.255",
+  "windows_agent_host": "100.x.x.x",
+  "windows_agent_port": 8788,
+  "windows_agent_token": "change-me-to-match-windows-agent-config"
+}

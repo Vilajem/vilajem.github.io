@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="hu">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Home PC Remote</title>
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icons/icon.svg">
+<link rel="icon" href="icons/icon.svg" type="image/svg+xml">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="PC Remote">
+<meta name="theme-color" content="#0f172a" media="(prefers-color-scheme: dark)">
+<meta name="theme-color" content="#f8fafc" media="(prefers-color-scheme: light)">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<header class="app-header">
+  <h1>Home PC Remote</h1>
+  <div class="progress" role="progressbar" aria-label="Folyamat" aria-valuemin="0" aria-valuemax="7">
+    <div class="progress-fill" id="progress-fill"></div>
+  </div>
+  <button id="settings-btn" class="icon-btn" aria-label="Beállítások">⚙</button>
+</header>
+
+<div class="toolbar">
+  <label for="project-select">Aktív mappa</label>
+  <select id="project-select">
+    <option value="">— válassz mappát —</option>
+  </select>
+  <button id="refresh-projects" class="ghost small">Frissítés</button>
+</div>
+
+<main class="stage-list">
+
+  <section class="stage-card" data-stage="wake" data-status="idle">
+    <div class="stage-head">
+      <span class="badge" data-role="badge"></span>
+      <h2>1. Gép felébresztése</h2>
+    </div>
+    <p class="stage-desc">Wake-on-LAN csomag küldése a Pi-n keresztül a Windows gépnek.</p>
+    <p class="stage-feedback" data-role="feedback">Még nem történt semmi.</p>
+    <div class="stage-actions">
+      <button data-action="wake" class="primary">Ébresztés</button>
+      <button data-action="check-status" class="ghost">Online ellenőrzés</button>
+    </div>
+  </section>
+
+  <section class="stage-card" data-stage="vscode-start" data-status="idle">
+    <div class="stage-head">
+      <span class="badge" data-role="badge"></span>
+      <h2>2. VS Code elindítása</h2>
+    </div>
+    <p class="stage-desc">VS Code elindítása mappa megnyitása nélkül.</p>
+    <p class="stage-feedback" data-role="feedback">Még nem történt semmi.</p>
+    <div class="stage-actions">
+      <button data-action="vscode-start" class="primary">Indítás</button>
+    </div>
+  </section>
+
+  <section class="stage-card" data-stage="create-project" data-status="idle">
+    <div class="stage-head">
+      <span class="badge" data-role="badge"></span>
+      <h2>3. Új projekt mappa létrehozása</h2>
+    </div>
+    <p class="stage-desc">A Windows agent konfigurációjában beállított projects-root alá kerül.</p>
+    <p class="stage-feedback" data-role="feedback">Még nem történt semmi.</p>
+    <div class="stage-actions">
+      <input type="text" id="new-project-name" placeholder="pl. weather-app" autocapitalize="off" autocorrect="off" spellcheck="false">
+      <button data-action="create-project" class="primary">Létrehozás</button>
+    </div>
+  </section>
+
+  <section class="stage-card" data-stage="open-project" data-status="idle">
+    <div class="stage-head">
+      <span class="badge" data-role="badge"></span>
+      <h2>4. Mappa megnyitása VS Code-ban</h2>
+    </div>
+    <p class="stage-desc">A fent kiválasztott mappa megnyitása VS Code-ban.</p>
+    <p class="stage-feedback" data-role="feedback">Még nem történt semmi.</p>
+    <div class="stage-actions">
+      <button data-action="open-project" class="primary">Megnyitás</button>
+    </div>
+  </section>
+
+  <section class="stage-card" data-stage="trust-folder" data-status="idle">
+    <div class="stage-head">
+      <span class="badge" data-role="badge"></span>
+      <h2>5. Mappa megbízhatóvá tétele</h2>
+    </div>
+    <p class="stage-desc">
+      A megnyitás mindig <code>--disable-workspace-trust</code>-tal fut, tehát ez a legtöbbször
+      felesleges — de ha a trust-dialógus mégis megjelenne, ez a gomb újraküldi a parancsot a
+      kiválasztott mappára.
+    </p>
+    <p class="stage-feedback" data-role="feedback">Még nem történt semmi.</p>
+    <div class="stage-actions">
+      <button data-action="trust-folder" class="primary">Megbízhatóvá tétel</button>
+    </div>
+  </section>
+
+  <section class="stage-card" data-stage="remote-control" data-status="idle">
+    <div class="stage-head">
+      <span class="badge" data-role="badge"></span>
+      <h2>6. Remote Control csatlakoztatása</h2>
+    </div>
+    <p class="stage-desc">
+      Elindítja a <code>claude</code>-ot a kiválasztott mappában, majd elküldi neki a
+      <code>/remote-control</code> parancsot. Utána a claude.ai/code appból tudsz rácsatlakozni.
+    </p>
+    <p class="stage-feedback" data-role="feedback">Még nem történt semmi.</p>
+    <p class="claude-hint" data-role="claude-hint"></p>
+    <div class="stage-actions">
+      <button data-action="claude-start" class="primary">Claude indítása</button>
+      <button data-action="claude-remote-control" class="primary">Remote Control aktiválása</button>
+      <button data-action="claude-output" class="ghost">Kimenet frissítése</button>
+    </div>
+    <pre class="output-panel" data-role="claude-output">(még nincs kimenet)</pre>
+  </section>
+
+  <section class="stage-card" data-stage="shutdown" data-status="idle">
+    <div class="stage-head">
+      <span class="badge" data-role="badge"></span>
+      <h2>7. Számítógép leállítása</h2>
+    </div>
+    <p class="stage-desc">Leállítja a Windows gépet. Megerősítést kér, véletlen koppintás nem indítja el.</p>
+    <p class="stage-feedback" data-role="feedback">Még nem történt semmi.</p>
+    <div class="stage-actions">
+      <button data-action="shutdown" class="danger">Leállítás</button>
+    </div>
+  </section>
+
+</main>
+
+<details id="log-panel">
+  <summary>Aktivitás napló</summary>
+  <div id="log-list"></div>
+  <button id="clear-log" class="ghost small">Napló törlése</button>
+</details>
+
+<dialog id="settings-dialog">
+  <form method="dialog" id="settings-form">
+    <h2>Beállítások</h2>
+
+    <label for="setting-phone-token">Phone token</label>
+    <input type="password" id="setting-phone-token" autocapitalize="off" autocorrect="off" spellcheck="false">
+
+    <label for="setting-poll-interval">Automata frissítés (mp)</label>
+    <input type="number" id="setting-poll-interval" min="2" max="60">
+
+    <label class="checkbox-row">
+      <input type="checkbox" id="setting-auto-poll">
+      Online állapot / Claude kimenet automatikus frissítése
+    </label>
+
+    <details class="advanced-settings">
+      <summary>Fejlett</summary>
+
+      <label for="setting-api-base-url">API base URL (üresen = ugyanaz az origin)</label>
+      <input type="text" id="setting-api-base-url" placeholder="pl. https://pi.example.ts.net">
+
+      <label for="setting-rdp-template">Remote desktop deep-link (troubleshootinghoz, opcionális)</label>
+      <input type="text" id="setting-rdp-template" placeholder="pl. anydesk:1234567890">
+      <button type="button" id="open-rdp-link" class="ghost small">Megnyitás</button>
+    </details>
+
+    <div class="dialog-actions">
+      <button type="button" id="settings-clear" class="ghost">Beállítások törlése</button>
+      <button type="submit" id="settings-save" class="primary">Mentés</button>
+    </div>
+  </form>
+</dialog>
+
+<script type="module" src="js/main.js"></script>
+</body>
+</html>
