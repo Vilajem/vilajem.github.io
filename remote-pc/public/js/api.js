@@ -2,8 +2,15 @@ import { state, pushLog } from "./state.js";
 
 const TIMEOUT_MS = 8000;
 
+// When no explicit API base URL is set, resolve API paths relative to
+// wherever this page itself was loaded from (e.g. served under an nginx
+// prefix like /remote-pc/) instead of the domain root.
+function defaultBase() {
+  return new URL(".", window.location.href).href.replace(/\/$/, "");
+}
+
 async function apiCall(method, path, body) {
-  const base = state.settings.apiBaseUrl || "";
+  const base = state.settings.apiBaseUrl || defaultBase();
   const url = base + path;
   const headers = { "X-Auth-Token": state.settings.phoneToken };
   if (body !== undefined) headers["Content-Type"] = "application/json";
