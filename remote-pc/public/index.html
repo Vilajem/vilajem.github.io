@@ -10,14 +10,14 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="PC Remote">
-<meta name="theme-color" content="#0f172a" media="(prefers-color-scheme: dark)">
-<meta name="theme-color" content="#f8fafc" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#0a0a0a">
 <link rel="stylesheet" href="styles.css">
 </head>
 <body>
 
 <header class="app-header">
-  <h1>Home PC Remote</h1>
+  <svg class="header-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5h16v14H4z" fill="none" stroke="currentColor" stroke-width="2"/><path d="M7 9l3 3-3 3M12 15h5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+  <h1><span class="prompt">root@pi:~$</span> <span class="accent-text">home-pc-remote</span></h1>
   <div class="progress" role="progressbar" aria-label="Folyamat" aria-valuemin="0" aria-valuemax="7">
     <div class="progress-fill" id="progress-fill"></div>
   </div>
@@ -34,10 +34,11 @@
 
 <main class="stage-list">
 
-  <section class="stage-card" data-stage="wake" data-status="idle">
+  <section class="stage-card" data-stage="wake" data-status="idle" data-index="01/07">
     <div class="stage-head">
-      <span class="badge" data-role="badge"></span>
-      <h2>1. Gép felébresztése</h2>
+      <svg class="stage-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M13 2 4 14h6l-1 8 9-12h-6z" fill="currentColor"/></svg>
+      <h2>Gép felébresztése</h2>
+      <span class="badge" data-role="badge">IDLE</span>
     </div>
     <p class="stage-desc">Wake-on-LAN csomag küldése a Pi-n keresztül a Windows gépnek.</p>
     <p class="stage-feedback" data-role="feedback">Még nem történt semmi.</p>
@@ -47,10 +48,11 @@
     </div>
   </section>
 
-  <section class="stage-card" data-stage="vscode-start" data-status="idle">
+  <section class="stage-card" data-stage="vscode-start" data-status="idle" data-index="02/07">
     <div class="stage-head">
-      <span class="badge" data-role="badge"></span>
-      <h2>2. VS Code elindítása</h2>
+      <svg class="stage-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 4 2 12l6 8M16 4l6 8-6 8" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      <h2>VS Code elindítása</h2>
+      <span class="badge" data-role="badge">IDLE</span>
     </div>
     <p class="stage-desc">VS Code elindítása mappa megnyitása nélkül.</p>
     <p class="stage-feedback" data-role="feedback">Még nem történt semmi.</p>
@@ -59,10 +61,11 @@
     </div>
   </section>
 
-  <section class="stage-card" data-stage="create-project" data-status="idle">
+  <section class="stage-card" data-stage="create-project" data-status="idle" data-index="03/07">
     <div class="stage-head">
-      <span class="badge" data-role="badge"></span>
-      <h2>3. Új projekt mappa létrehozása</h2>
+      <svg class="stage-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2Z" fill="none" stroke="currentColor" stroke-width="2"/><path d="M12 11v5M9.5 13.5h5" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+      <h2>Új projekt mappa</h2>
+      <span class="badge" data-role="badge">IDLE</span>
     </div>
     <p class="stage-desc">A Windows agent konfigurációjában beállított projects-root alá kerül.</p>
     <p class="stage-feedback" data-role="feedback">Még nem történt semmi.</p>
@@ -72,10 +75,11 @@
     </div>
   </section>
 
-  <section class="stage-card" data-stage="open-project" data-status="idle">
+  <section class="stage-card" data-stage="open-project" data-status="idle" data-index="04/07">
     <div class="stage-head">
-      <span class="badge" data-role="badge"></span>
-      <h2>4. Mappa megnyitása VS Code-ban</h2>
+      <svg class="stage-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 8a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2H3Z" fill="none" stroke="currentColor" stroke-width="2"/><path d="M3 8l1.5 9a2 2 0 0 0 2 1.5h11a2 2 0 0 0 2-1.5L21 10H3Z" fill="none" stroke="currentColor" stroke-width="2"/></svg>
+      <h2>Mappa megnyitása</h2>
+      <span class="badge" data-role="badge">IDLE</span>
     </div>
     <p class="stage-desc">A fent kiválasztott mappa megnyitása VS Code-ban.</p>
     <p class="stage-feedback" data-role="feedback">Még nem történt semmi.</p>
@@ -84,10 +88,11 @@
     </div>
   </section>
 
-  <section class="stage-card" data-stage="trust-folder" data-status="idle">
+  <section class="stage-card" data-stage="trust-folder" data-status="idle" data-index="05/07">
     <div class="stage-head">
-      <span class="badge" data-role="badge"></span>
-      <h2>5. Mappa megbízhatóvá tétele</h2>
+      <svg class="stage-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l7 3v6c0 5-3.5 7.5-7 9-3.5-1.5-7-4-7-9V6Z" fill="none" stroke="currentColor" stroke-width="2"/><path d="M9 12l2 2 4-4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      <h2>Mappa megbízhatóvá tétele</h2>
+      <span class="badge" data-role="badge">IDLE</span>
     </div>
     <p class="stage-desc">
       A megnyitás mindig <code>--disable-workspace-trust</code>-tal fut, tehát ez a legtöbbször
@@ -100,10 +105,11 @@
     </div>
   </section>
 
-  <section class="stage-card" data-stage="remote-control" data-status="idle">
+  <section class="stage-card" data-stage="remote-control" data-status="idle" data-index="06/07">
     <div class="stage-head">
-      <span class="badge" data-role="badge"></span>
-      <h2>6. Remote Control csatlakoztatása</h2>
+      <svg class="stage-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21v-6M8 21h8" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><circle cx="12" cy="9" r="3" stroke="currentColor" stroke-width="2" fill="none"/><path d="M5 9a7 7 0 0 1 14 0M2 9a10 10 0 0 1 20 0" stroke="currentColor" stroke-width="2" stroke-linecap="round" fill="none"/></svg>
+      <h2>Remote Control</h2>
+      <span class="badge" data-role="badge">IDLE</span>
     </div>
     <p class="stage-desc">
       Elindítja a <code>claude</code>-ot a kiválasztott mappában, majd elküldi neki a
@@ -119,10 +125,11 @@
     <pre class="output-panel" data-role="claude-output">(még nincs kimenet)</pre>
   </section>
 
-  <section class="stage-card" data-stage="shutdown" data-status="idle">
+  <section class="stage-card" data-stage="shutdown" data-status="idle" data-index="07/07">
     <div class="stage-head">
-      <span class="badge" data-role="badge"></span>
-      <h2>7. Számítógép leállítása</h2>
+      <svg class="stage-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2v9" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><path d="M6.5 6a8 8 0 1 0 11 0" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+      <h2>Számítógép leállítása</h2>
+      <span class="badge" data-role="badge">IDLE</span>
     </div>
     <p class="stage-desc">Leállítja a Windows gépet. Megerősítést kér, véletlen koppintás nem indítja el.</p>
     <p class="stage-feedback" data-role="feedback">Még nem történt semmi.</p>

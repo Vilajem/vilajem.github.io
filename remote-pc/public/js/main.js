@@ -12,11 +12,21 @@ function fmtTime(iso) {
 
 // -- render ---------------------------------------------------------------
 
+const STATUS_LABELS = {
+  idle: "IDLE",
+  "in-progress": "RUNNING",
+  done: "DONE",
+  error: "ERROR",
+  "needs-attention": "ATTN",
+};
+
 function renderStage(id) {
   const card = document.querySelector(`.stage-card[data-stage="${id}"]`);
   if (!card) return;
   const s = state.stages[id];
   card.dataset.status = s.status;
+  const badge = card.querySelector('[data-role="badge"]');
+  if (badge) badge.textContent = STATUS_LABELS[s.status] || s.status.toUpperCase();
   const feedback = card.querySelector('[data-role="feedback"]');
   if (feedback) feedback.textContent = s.message || "Még nem történt semmi.";
 }
