@@ -4,20 +4,18 @@
 Started at logon via Task Scheduler (see register-task.ps1). Reachable only
 from the Tailscale network (restrict with Windows Firewall to
 100.64.0.0/10, or simply trust that only the Pi gateway calls it). Lists /
-creates project folders, launches VS Code with workspace trust
-pre-disabled, spawns and drives a `claude` CLI session, and can shut the
-machine down. Stdlib only, no third-party dependencies.
+creates project folders, launches VS Code with workspace trust pre-disabled
+(auto-run-command + remoteControlAtStartup on that machine then bring up
+the Claude Code panel and Remote Control on their own — see README), and
+can shut the machine down. Stdlib only, no third-party dependencies.
 """
 
 from __future__ import annotations
 
-import collections
 import json
 import re
 import subprocess
 import sys
-import threading
-import time
 from datetime import datetime, timezone
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
@@ -26,7 +24,6 @@ BASE_DIR = Path(__file__).resolve().parent
 CONFIG_PATH = BASE_DIR / "config.json"
 RUNTIME_CONFIG_PATH = BASE_DIR / "runtime-config.json"
 NAME_RE = re.compile(r"^[A-Za-z0-9_-]{1,64}$")
-OUTPUT_MAXLEN = 200
 
 
 def load_config() -> dict:
@@ -92,97 +89,6 @@ def set_projects_root(raw_path: str) -> Path:
     return candidate
 
 
-# -- claude subprocess tracking (single session at a time) ---------------
-
-claude_lock = threading.Lock()
-claude_state = {"proc": None, "folder": None, "output": collections.deque(maxlen=OUTPUT_MAXLEN)}
-
-CLAUDE_JSON_PATH = Path.home() / ".claude.json"
-
-
-def _ensure_workspace_trusted(target: Path) -> None:
-    """Pre-accept the claude CLI's workspace trust dialog for this folder.
-
-    `claude remote-control` refuses to start in an untrusted directory and
-    the trust dialog only works in a real interactive terminal, which this
-    agent doesn't have — so mirror what accepting it does by hand: set
-    hasTrustDialogAccepted for this folder in ~/.claude.json. Uses forward
-    slashes as the project key, matching what the CLI itself writes.
-    """
-    key = target.resolve().as_posix()
-    try:
-        with CLAUDE_JSON_PATH.open(encoding="utf-8") as f:
-            data = json.load(f)
-    except (FileNotFoundError, json.JSONDecodeError):
-        data = {}
-    projects = data.setdefault("projects", {})
-    entry = projects.setdefault(key, {})
-    if entry.get("hasTrustDialogAccepted"):
-        return
-    entry["hasTrustDialogAccepted"] = True
-    with CLAUDE_JSON_PATH.open("w", encoding="utf-8") as f:
-        json.dump(data, f, indent=2)
-
-
-def _reader_loop(proc: subprocess.Popen, output: collections.deque) -> None:
-    try:
-        for line in iter(proc.stdout.readline, ""):
-            if not line:
-                break
-            with claude_lock:
-                output.append(line.rstrip("\n"))
-    except Exception as e:  # process pipe torn down, etc.
-        with claude_lock:
-            output.append(f"[agent] reader stopped: {e}")
-
-
-def start_remote_control(folder_name: str) -> dict:
-    target = resolve_project(folder_name)
-    if not target.is_dir():
-        raise FileNotFoundError(folder_name)
-    with claude_lock:
-        proc = claude_state["proc"]
-        if proc is not None and proc.poll() is None and claude_state["folder"] == folder_name:
-            return {"alreadyRunning": True}
-        _ensure_workspace_trusted(target)
-        claude_cmd = CONFIG.get("claude_command", "claude")
-        new_proc = subprocess.Popen(
-            [claude_cmd, "remote-control", "--name", folder_name],
-            cwd=str(target),
-            stdin=subprocess.PIPE,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.STDOUT,
-            text=True,
-            bufsize=1,
-        )
-        output = collections.deque(maxlen=OUTPUT_MAXLEN)
-        claude_state["proc"] = new_proc
-        claude_state["folder"] = folder_name
-        claude_state["output"] = output
-        threading.Thread(target=_reader_loop, args=(new_proc, output), daemon=True).start()
-    return {"alreadyRunning": False}
-
-
-def get_claude_output() -> tuple[bool, list[str]]:
-    with claude_lock:
-        proc = claude_state["proc"]
-        running = proc is not None and proc.poll() is None
-        lines = list(claude_state["output"])[-50:]
-    return running, lines
-
-
-# -- claude login heuristic ----------------------------------------------
-
-def claude_status() -> dict:
-    cred_path = Path.home() / ".claude" / ".credentials.json"
-    exists = cred_path.is_file()
-    if not exists:
-        return {"credentialsFileExists": False, "lastModifiedAt": None, "hint": "likely_not_logged_in"}
-    mtime = cred_path.stat().st_mtime
-    last_modified = datetime.fromtimestamp(mtime, tz=timezone.utc).isoformat()
-    return {"credentialsFileExists": True, "lastModifiedAt": last_modified, "hint": "likely_logged_in"}
-
-
 # -- shutdown --------------------------------------------------------------
 
 def do_shutdown(delay_sec: int) -> None:
@@ -224,11 +130,6 @@ class Handler(BaseHTTPRequestHandler):
             return
         if path == "/api/projects":
             self._send_json(200, {"ok": True, "projects": list_projects()})
-        elif path == "/api/claude/output":
-            running, lines = get_claude_output()
-            self._send_json(200, {"ok": True, "running": running, "lines": lines})
-        elif path == "/api/claude-status":
-            self._send_json(200, {"ok": True, **claude_status()})
         elif path == "/api/config":
             self._send_json(200, {"ok": True, "projectsRoot": str(RUNTIME["projects_root"])})
         else:
@@ -243,8 +144,6 @@ class Handler(BaseHTTPRequestHandler):
             self._create_project()
         elif path == "/api/vscode/open":
             self._open_vscode()
-        elif path == "/api/claude/remote-control":
-            self._remote_control()
         elif path == "/api/shutdown":
             self._shutdown()
         elif path == "/api/config":
@@ -288,22 +187,6 @@ class Handler(BaseHTTPRequestHandler):
             self._send_json(500, {"ok": False, "error": "launch_failed", "message": str(e)})
             return
         self._send_json(200, {"ok": True, "project": folder, "launchedAt": now_iso()})
-
-    def _remote_control(self):
-        body = self._read_json()
-        folder = body.get("folder", "")
-        try:
-            result = start_remote_control(folder)
-        except ValueError:
-            self._send_json(400, {"ok": False, "error": "invalid_name"})
-            return
-        except FileNotFoundError:
-            self._send_json(404, {"ok": False, "error": "not_found"})
-            return
-        except OSError as e:
-            self._send_json(500, {"ok": False, "error": "launch_failed", "message": str(e)})
-            return
-        self._send_json(200, {"ok": True, "startedAt": now_iso(), **result})
 
     def _shutdown(self):
         body = self._read_json()

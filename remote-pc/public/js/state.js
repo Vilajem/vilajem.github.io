@@ -5,11 +5,8 @@ const STORAGE_KEY = "remote-pc-state-v1";
 
 export const STAGE_IDS = [
   "wake",
-  "vscode-start",
   "create-project",
   "open-project",
-  "trust-folder",
-  "remote-control",
   "shutdown",
 ];
 
@@ -22,7 +19,6 @@ function defaultState() {
     version: 1,
     stages,
     projects: { list: [], selected: "" },
-    claude: { running: false, lines: [] },
     settings: {
       phoneToken: "",
       remoteDesktopTemplate: "",

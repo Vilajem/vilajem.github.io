@@ -18,7 +18,7 @@
 <header class="app-header">
   <svg class="header-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5h16v14H4z" fill="none" stroke="currentColor" stroke-width="2"/><path d="M7 9l3 3-3 3M12 15h5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
   <h1><span class="prompt">root@pi:~$</span> <span class="accent-text">home-pc-remote</span></h1>
-  <div class="progress" role="progressbar" aria-label="Folyamat" aria-valuemin="0" aria-valuemax="7">
+  <div class="progress" role="progressbar" aria-label="Folyamat" aria-valuemin="0" aria-valuemax="4">
     <div class="progress-fill" id="progress-fill"></div>
   </div>
   <button id="settings-btn" class="icon-btn" aria-label="Beállítások">⚙</button>
@@ -34,7 +34,7 @@
 
 <main class="stage-list">
 
-  <section class="stage-card" data-stage="wake" data-status="idle" data-index="01/07">
+  <section class="stage-card" data-stage="wake" data-status="idle" data-index="01/04">
     <div class="stage-head">
       <svg class="stage-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M13 2 4 14h6l-1 8 9-12h-6z" fill="currentColor"/></svg>
       <h2>Gép állapota</h2>
@@ -47,20 +47,7 @@
     </div>
   </section>
 
-  <section class="stage-card" data-stage="vscode-start" data-status="idle" data-index="02/07">
-    <div class="stage-head">
-      <svg class="stage-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 4 2 12l6 8M16 4l6 8-6 8" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-      <h2>VS Code elindítása</h2>
-      <span class="badge" data-role="badge">IDLE</span>
-    </div>
-    <p class="stage-desc">VS Code elindítása mappa megnyitása nélkül.</p>
-    <p class="stage-feedback"><span class="thinking-spinner" data-role="spinner"></span><span data-role="feedback">Még nem történt semmi.</span></p>
-    <div class="stage-actions">
-      <button data-action="vscode-start" class="primary">Indítás</button>
-    </div>
-  </section>
-
-  <section class="stage-card" data-stage="create-project" data-status="idle" data-index="03/07">
+  <section class="stage-card" data-stage="create-project" data-status="idle" data-index="02/04">
     <div class="stage-head">
       <svg class="stage-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2Z" fill="none" stroke="currentColor" stroke-width="2"/><path d="M12 11v5M9.5 13.5h5" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
       <h2>Új projekt mappa</h2>
@@ -74,56 +61,24 @@
     </div>
   </section>
 
-  <section class="stage-card" data-stage="open-project" data-status="idle" data-index="04/07">
+  <section class="stage-card" data-stage="open-project" data-status="idle" data-index="03/04">
     <div class="stage-head">
       <svg class="stage-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 8a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2H3Z" fill="none" stroke="currentColor" stroke-width="2"/><path d="M3 8l1.5 9a2 2 0 0 0 2 1.5h11a2 2 0 0 0 2-1.5L21 10H3Z" fill="none" stroke="currentColor" stroke-width="2"/></svg>
       <h2>Mappa megnyitása</h2>
       <span class="badge" data-role="badge">IDLE</span>
     </div>
-    <p class="stage-desc">A fent kiválasztott mappa megnyitása VS Code-ban.</p>
+    <p class="stage-desc">
+      Megnyitja a fent kiválasztott mappát VS Code-ban (trust-dialógus nélkül) — ez
+      automatikusan megnyitja a Claude Code panelt és aktiválja a Remote Control-t is,
+      utána a claude.ai/code appból tudsz rácsatlakozni.
+    </p>
     <p class="stage-feedback"><span class="thinking-spinner" data-role="spinner"></span><span data-role="feedback">Még nem történt semmi.</span></p>
     <div class="stage-actions">
       <button data-action="open-project" class="primary">Megnyitás</button>
     </div>
   </section>
 
-  <section class="stage-card" data-stage="trust-folder" data-status="idle" data-index="05/07">
-    <div class="stage-head">
-      <svg class="stage-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l7 3v6c0 5-3.5 7.5-7 9-3.5-1.5-7-4-7-9V6Z" fill="none" stroke="currentColor" stroke-width="2"/><path d="M9 12l2 2 4-4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-      <h2>Mappa megbízhatóvá tétele</h2>
-      <span class="badge" data-role="badge">IDLE</span>
-    </div>
-    <p class="stage-desc">
-      A megnyitás mindig <code>--disable-workspace-trust</code>-tal fut, tehát ez a legtöbbször
-      felesleges — de ha a trust-dialógus mégis megjelenne, ez a gomb újraküldi a parancsot a
-      kiválasztott mappára.
-    </p>
-    <p class="stage-feedback"><span class="thinking-spinner" data-role="spinner"></span><span data-role="feedback">Még nem történt semmi.</span></p>
-    <div class="stage-actions">
-      <button data-action="trust-folder" class="primary">Megbízhatóvá tétel</button>
-    </div>
-  </section>
-
-  <section class="stage-card" data-stage="remote-control" data-status="idle" data-index="06/07">
-    <div class="stage-head">
-      <svg class="stage-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21v-6M8 21h8" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><circle cx="12" cy="9" r="3" stroke="currentColor" stroke-width="2" fill="none"/><path d="M5 9a7 7 0 0 1 14 0M2 9a10 10 0 0 1 20 0" stroke="currentColor" stroke-width="2" stroke-linecap="round" fill="none"/></svg>
-      <h2>Remote Control</h2>
-      <span class="badge" data-role="badge">IDLE</span>
-    </div>
-    <p class="stage-desc">
-      Elindítja a <code>claude remote-control</code>-t a kiválasztott mappában.
-      Utána a claude.ai/code appból tudsz rácsatlakozni.
-    </p>
-    <p class="stage-feedback"><span class="thinking-spinner" data-role="spinner"></span><span data-role="feedback">Még nem történt semmi.</span></p>
-    <p class="claude-hint" data-role="claude-hint"></p>
-    <div class="stage-actions">
-      <button data-action="claude-remote-control" class="primary">Remote Control indítása</button>
-      <button data-action="claude-output" class="ghost">Kimenet frissítése</button>
-    </div>
-    <pre class="output-panel" data-role="claude-output">(még nincs kimenet)</pre>
-  </section>
-
-  <section class="stage-card" data-stage="shutdown" data-status="idle" data-index="07/07">
+  <section class="stage-card" data-stage="shutdown" data-status="idle" data-index="04/04">
     <div class="stage-head">
       <svg class="stage-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2v9" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><path d="M6.5 6a8 8 0 1 0 11 0" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
       <h2>Számítógép leállítása</h2>

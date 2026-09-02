@@ -1,10 +1,9 @@
 # Home PC Remote
 
 iPhone-ról vezérelt kapcsolópult az otthoni Windows géphez: ellenőrzi, hogy online-e,
-elindítja VS Code-ot, mappát hoz létre/nyit meg (automatikusan megbízhatóként),
-elindítja a Claude Code-ot és bekapcsolja a `/remote-control`-t, majd le is tudja
-állítani a gépet. Minden a Tailscale-en belül fut, nyilvános internetre semmi nem
-kerül ki.
+mappát hoz létre/nyit meg VS Code-ban (automatikusan megbízhatóként, Claude Code
+panellel és Remote Control-lal automatikusan aktiválva), majd le is tudja állítani
+a gépet. Minden a Tailscale-en belül fut, nyilvános internetre semmi nem kerül ki.
 
 **Megjegyzés:** a jelenlegi célgép (ASUS ROG Ally) firmware-je nem támogatja a
 hálózati Wake-on-LAN-t alvó/kikapcsolt állapotból (`powercfg /a` kimenete szerint
@@ -24,38 +23,49 @@ Raspberry Pi / always-on Linux gép — pi-server/server.py (Docker, host networ
   - GET  /api/status                  windows agent elérhető-e
   - GET/POST /api/projects            proxyzva a Windows agent felé
   - POST /api/vscode/open             proxyzva
-  - POST /api/claude/remote-control   proxyzva
-  - GET  /api/claude/output           proxyzva
-  - GET  /api/claude-status           proxyzva
   - POST /api/shutdown                proxyzva
         │  plain HTTP a tailneten belül (a WireGuard már titkosít)
         ▼
 Windows PC — windows-agent/agent.py (Task Scheduler indítja "At log on"-nal)
   - listázza/létrehozza a projekt mappákat
   - `code --disable-workspace-trust [mappa]` — VS Code indítás, trust-dialógus nélkül
-  - előzetesen elfogadja a claude CLI workspace-trust dialógusát a mappára
-    (~/.claude.json-ban hasTrustDialogAccepted), majd `claude remote-control
-    --name <mappa>` indítása egy lépésben
   - `shutdown /s /t <mp>` — gép leállítása
+        │  a VS Code-on belül (nem az agentben) fut:
+        ▼
+VS Code — auto-run-command extension + Claude Code extension
+  - VS Code minden megnyitáskor lefuttatja a `claude-vscode.sidebar.open`
+    parancsot (auto-run-command.rules a user settings.json-ban)
+  - a Claude Code extension `remoteControlAtStartup: true` beállítással minden
+    új interaktív session-t automatikusan Remote Control-ba kapcsol
+  - eredmény: a mappa megnyitása minden emberi beavatkozás nélkül végigviszi
+    a "VS Code megnyílik → Claude panel megnyílik → Remote Control aktív"
+    láncot, és a session megjelenik a claude.ai/code-on
 ```
 
 ## Miért nincs itt AnyDesk / manuális trust-kattintás?
 
 Az első tervben a mappa-trust és a Claude bejelentkezés szándékosan manuális lépés lett
 volna (AnyDesk-kel ránézve a képernyőre). Ezt a felhasználó elvetette: minden lépés
-gombbal, szkriptelve fusson. Ez két konkrét dolgot jelent:
+gombbal, szkriptelve fusson, VS Code-on belüli, valódi Claude Code session-nel
+(nem egy külön CLI-alapú terminál-session-nel).
 
-- **Trust (VS Code)**: a `code` mindig a hivatalos, dokumentált
-  `--disable-workspace-trust` kapcsolóval indul, ami kikapcsolja a trust-dialógust az
-  adott ablakra. Ez nem trükk — pontosan erre a célra (automatizált/scriptelt VS Code
-  indítás) létezik.
-- **Trust (Claude CLI) / Remote Control**: a `claude` CLI-nek saját, VS Code-tól
-  független workspace-trust dialógusa van, ami csak interaktív terminálban működik —
-  a windows-agent nem fut interaktív terminálban, úgyhogy a dialógus helyett előre
-  beírja a jóváhagyást a `~/.claude.json` `projects.<mappa>.hasTrustDialogAccepted`
-  mezőjébe, majd egy lépésben elindítja a `claude remote-control --name <mappa>`-t
-  (a hivatalos szerver-mód, ld. [Claude Code Remote Control dokumentáció](https://code.claude.com/docs/en/remote-control)).
-  Ez a gyakorlatban **nem igényel bejelentkezést**, mert a Claude Code CLI egyszeri
+- **Trust**: a `code` mindig a hivatalos, dokumentált `--disable-workspace-trust`
+  kapcsolóval indul, ami kikapcsolja a trust-dialógust az adott ablakra. Ez nem trükk —
+  pontosan erre a célra (automatizált/scriptelt VS Code indítás) létezik.
+- **Claude panel + Remote Control automatikus indítása**: a VS Code Claude Code
+  extension-nek nincs parancssori/programozott módja arra, hogy egy külső szkript
+  adott mappával *és* Remote Control-lal nyisson meg egy tabot — ezt VS Code-on belül,
+  egyszeri beállítással oldottuk meg:
+  1. Az [auto-run-command](https://marketplace.visualstudio.com/items?itemName=gabrielgrinberg.auto-run-command)
+     extension VS Code minden indításakor lefuttatja a `claude-vscode.sidebar.open`
+     parancsot (`auto-run-command.rules` a VS Code user `settings.json`-jában).
+  2. A Claude Code `remoteControlAtStartup: true` beállítás (`~/.claude/settings.json`)
+     miatt minden így induló session automatikusan csatlakozik Remote Control-hoz.
+  3. A `claude-vscode.sidebar.open` a workspace-hez tartozó legutóbbi session-t nyitja
+     meg (vagy újat indít, ha még nem volt), tehát ismételt megnyitáskor a korábbi
+     beszélgetés folytatódik, nem indul mindig újra.
+
+  Ez a gyakorlatban **nem igényel bejelentkezést**, mert a Claude Code egyszeri
   interaktív `claude login` után a hitelesítést a `%USERPROFILE%\.claude\.credentials.json`
   fájlban tárolja, és azt minden induláskor automatikusan felhasználja.
 
@@ -71,10 +81,10 @@ aki ismeri a `phone_token`-t, tetszőleges mappában tud parancsot futtató prog
 - a Pi-n a `tailscale serve` biztosítja, hogy a weblap/API kizárólag a saját
   tailneteden belülről érhető el (nincs Funnel, nincs nyilvános port).
 
-Ha a tárolt Claude-hitelesítés mégis lejár (ritka), a `remote-control` kártya kimenet-
-panelje szövegként mutatja majd, hogy bejelentkezést kér — ilyenkor (és csak ilyenkor)
-kell egyszer fizikailag vagy egy távoli asztali programmal (pl. AnyDesk, ha van
-telepítve unattended access-szel) ránézni a gépre és újra bejelentkezni.
+Ha a tárolt Claude-hitelesítés mégis lejár (ritka), a VS Code Claude panel jelzi majd,
+hogy bejelentkezést kér — ilyenkor (és csak ilyenkor) kell egyszer fizikailag vagy egy
+távoli asztali programmal (pl. AnyDesk, ha van telepítve unattended access-szel)
+ránézni a gépre és újra bejelentkezni.
 
 ## Telepítés
 
@@ -92,30 +102,46 @@ telepítve unattended access-szel) ránézni a gépre és újra bejelentkezni.
 3. Telepítsd a [Tailscale](https://tailscale.com/) klienst, jelentkezz be, állítsd be,
    hogy automatikusan csatlakozzon induláskor.
 4. Telepítsd a [VS Code](https://code.visualstudio.com/) CLI-t (`code` legyen elérhető
-   a PATH-on) és a Claude Code CLI-t (`claude`), majd fuss le egyszer interaktívan
-   `claude login`-t, hogy a hitelesítés elmentődjön.
-5. Klónozd/másold ezt a repót (vagy csak a `remote-pc/windows-agent/` mappát) a gépre,
+   a PATH-on), a [Claude Code CLI-t](https://code.claude.com/docs/en/setup) és a
+   VS Code [Claude Code extension-t](https://code.claude.com/docs/en/vs-code), majd
+   fuss le egyszer interaktívan `claude login`-t, hogy a hitelesítés elmentődjön.
+5. Telepítsd az [auto-run-command](https://marketplace.visualstudio.com/items?itemName=gabrielgrinberg.auto-run-command)
+   VS Code extension-t (`code --install-extension gabrielgrinberg.auto-run-command`),
+   majd a VS Code user `settings.json`-jába (`Ctrl+Shift+P` → *Open User Settings (JSON)*)
+   add hozzá:
+   ```json
+   "auto-run-command.rules": [
+     { "condition": "always", "command": "claude-vscode.sidebar.open" }
+   ]
+   ```
+6. A Claude Code `~/.claude/settings.json`-jába add hozzá (vagy `/config` a CLI-ben →
+   *Enable Remote Control for all sessions*):
+   ```json
+   "remoteControlAtStartup": true
+   ```
+   Ez a két beállítás együtt biztosítja, hogy VS Code bármelyik mappával való
+   megnyitása automatikusan megnyissa a Claude panelt és aktiválja a Remote Control-t.
+7. Klónozd/másold ezt a repót (vagy csak a `remote-pc/windows-agent/` mappát) a gépre,
    pl. `C:\remote-pc\windows-agent`.
-6. Másold `config.example.json` → `config.json`, töltsd ki:
+8. Másold `config.example.json` → `config.json`, töltsd ki:
    - `auth_token`: hosszú, véletlen string (egyezzen a Pi `windows_agent_token`-jével)
    - `projects_root`: hova kerüljenek az új projekt mappák (ez csak a kezdeti érték —
      a telefonos Beállítások panelről bármikor átírható; az aktuális érték a
      `windows-agent/runtime-config.json`-ban perzisztálódik, agent-újraindítást is túlél)
-   - `code_command` / `claude_command`: ha `code`/`claude` npm-mel vagy a felhasználói
-     telepítőjükkel kerültek fel, gyakran csak a *felhasználói* PATH-on vannak, nem a
-     gépszintűn, amit a Task Scheduler-ből induló folyamat örököl — ha `vscode/open`
-     vagy `remote-control` `WinError 2`-t ad, cseréld ezeket abszolút elérési útra,
-     pl. `C:\\Users\\<name>\\AppData\\Local\\Programs\\Microsoft VS Code\\bin\\code.cmd`
-     és `C:\\Users\\<name>\\AppData\\Roaming\\npm\\claude.cmd`
-7. Regisztráld az agentet: nyiss egy admin PowerShell-t a `windows-agent` mappában, és
+   - `code_command`: ha `code` npm-mel vagy a felhasználói telepítőjével került fel,
+     gyakran csak a *felhasználói* PATH-on van, nem a gépszintűn, amit a Task
+     Scheduler-ből induló folyamat örököl — ha `vscode/open` `WinError 2`-t ad, cseréld
+     abszolút elérési útra, pl.
+     `C:\\Users\\<name>\\AppData\\Local\\Programs\\Microsoft VS Code\\bin\\code.cmd`
+9. Regisztráld az agentet: nyiss egy admin PowerShell-t a `windows-agent` mappában, és
    futtasd: `powershell -ExecutionPolicy Bypass -File register-task.ps1`
-8. Nyiss tűzfal-szabályt, ami csak a Tailscale tartományból engedi be az agent portját:
-   ```powershell
-   New-NetFirewallRule -DisplayName "RemotePCAgent" -Direction Inbound -Protocol TCP `
-     -LocalPort 8788 -RemoteAddress 100.64.0.0/10 -Action Allow
-   ```
-9. Jelentkezz ki és be egyszer, hogy a Task Scheduler-bejegyzés elinduljon, és
-   ellenőrizd, hogy fut-e az agent (pl. Feladatkezelőben `pythonw.exe`).
+10. Nyiss tűzfal-szabályt, ami csak a Tailscale tartományból engedi be az agent portját:
+    ```powershell
+    New-NetFirewallRule -DisplayName "RemotePCAgent" -Direction Inbound -Protocol TCP `
+      -LocalPort 8788 -RemoteAddress 100.64.0.0/10 -Action Allow
+    ```
+11. Jelentkezz ki és be egyszer, hogy a Task Scheduler-bejegyzés elinduljon, és
+    ellenőrizd, hogy fut-e az agent (pl. Feladatkezelőben `pythonw.exe`).
 
 ### 2. Raspberry Pi (vagy más always-on Linux gép) előkészítése
 
@@ -165,17 +191,18 @@ ha a gépeden több más app is fut nginx mögött hasonló mintával, kövesd u
 
 ## Használat
 
-A hét kártya bármelyik gombja bármikor, bármilyen sorrendben megnyomható — nincs
-automatikus láncolás. Tipikus menet:
+A négy kártya bármelyik gombja bármikor megnyomható — nincs automatikus láncolás.
+Tipikus menet:
 
 1. Kapcsold be fizikailag a gépet és jelentkezz be → **Gép állapota** kártyán
    **Online ellenőrzés**.
 2. **Új projekt mappa létrehozása** (vagy válassz meglévőt a felső legördülőből).
-3. **Mappa megnyitása VS Code-ban**.
-4. **Remote Control indítása** (egy gomb).
-5. Nyisd meg a claude.ai/code appot / weboldalt a telefonon, és csatlakozz a futó
-   session-höz.
-6. Ha végeztél: **Számítógép leállítása** (megerősítést kér), majd fizikailag
+3. **Mappa megnyitása** — ez egy lépésben elindítja VS Code-ot, megnyitja a Claude
+   Code panelt, és aktiválja a Remote Control-t.
+4. Nyisd meg a claude.ai/code appot / weboldalt a telefonon, és csatlakozz a futó
+   session-höz (a mappa nevével auto-generált néven, vagy a legutóbbi beszélgetés
+   címével, ha már dolgoztál korábban ebben a mappában).
+5. Ha végeztél: **Számítógép leállítása** (megerősítést kér), majd fizikailag
    kapcsold be újra, amikor legközelebb kell.
 
 Az összecsukható "Aktivitás napló" mindig mutatja az utolsó ~30 API-hívást és azok
@@ -192,10 +219,15 @@ eredményét — ide érdemes nézni, ha valami nem úgy viselkedik, ahogy várt
   hogy valaki fizikailag bejelentkezett. Auto-login beállítása (`netplwiz`) ezt a
   lépést kiküszöbölné, de gyengítené a gép fizikai hozzáférés elleni védelmét —
   ezt a felhasználó tudatosan nem kérte.
-- A `%USERPROFILE%\.claude\.credentials.json` alapú bejelentkezés-heurisztika csak
-  jelzés, nem garancia — ha a Claude Code egy jövőbeli verziója máshova teszi ezt a
-  fájlt, a `hint` mező pontatlan lesz, de a funkcionalitás (remote-control indítása)
-  ettől függetlenül működik, csak a kijelzett info lehet elavult.
-- A Windows-oldali beüzemelés (Python, Claude CLI, Task Scheduler, tűzfalszabály)
-  megtörtént és ellenőrzött a célgépen. A Raspberry Pi (`pi-server`) telepítése és a
-  végponti (iPhone → Pi → Windows agent) forgalom élesben tesztelése még hátravan.
+- A `claude-vscode.sidebar.open` a workspace-hez tartozó *legutóbbi* session-t nyitja
+  meg — ha egy adott mappában több párhuzamos beszélgetést szeretnél, azt VS Code-ban
+  kell kézzel indítanod (**Open in New Tab**), az automatika csak az elsőt intézi.
+- Az auto-run-command extension és a `remoteControlAtStartup` beállítás a *gépre*
+  vonatkozik, nem projektenkénti — minden VS Code-ablak (nem csak a windows-agent
+  által nyitottak) automatikusan megnyitja a Claude panelt és Remote Control-ba
+  kapcsol. Ha ez nem kívánt egy adott munkafolyamatnál, a `/config` paranccsal
+  (vagy a `remoteControlAtStartup` kikapcsolásával) egyedi session-önként
+  felülírható.
+- A rendszer élesben tesztelve és ellenőrizve lett a célgépen (Windows PC + Raspberry
+  Pi + iPhone), végpontig: online-ellenőrzés, projekt mappa létrehozás/megnyitás,
+  automatikus Claude panel + Remote Control aktiválás, és leállítás egyaránt működik.

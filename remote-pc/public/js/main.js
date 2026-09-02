@@ -121,40 +121,6 @@ function renderProjectSelect() {
   }
 }
 
-let lastRenderedOutput = null;
-let typingTimer = null;
-
-function renderClaudeOutput() {
-  const pre = document.querySelector('[data-role="claude-output"]');
-  if (!pre) return;
-  const text = state.claude.lines.length ? state.claude.lines.join("\n") : "(még nincs kimenet)";
-  if (text === lastRenderedOutput) return;
-  lastRenderedOutput = text;
-  typeIntoElement(pre, text);
-}
-
-function typeIntoElement(el, text) {
-  if (typingTimer) clearInterval(typingTimer);
-  el.textContent = "";
-  let i = 0;
-  const CHARS_PER_TICK = 3;
-  typingTimer = setInterval(() => {
-    i += CHARS_PER_TICK;
-    el.textContent = text.slice(0, i);
-    el.scrollTop = el.scrollHeight;
-    if (i >= text.length) {
-      el.textContent = text;
-      clearInterval(typingTimer);
-      typingTimer = null;
-    }
-  }, 12);
-}
-
-function renderClaudeHint(text) {
-  const el = document.querySelector('.stage-card[data-stage="remote-control"] [data-role="claude-hint"]');
-  if (el) el.textContent = text || "";
-}
-
 function renderLog() {
   const list = document.getElementById("log-list");
   list.innerHTML = "";
@@ -171,7 +137,6 @@ function renderAll() {
   for (const id of STAGE_IDS) renderStage(id);
   updateProgressBar();
   renderProjectSelect();
-  renderClaudeOutput();
   renderLog();
 }
 
@@ -187,16 +152,6 @@ async function handleCheckStatus() {
     setStageStatus("wake", "needs-attention", `Offline (${res.reason || "ismeretlen ok"}) — ${fmtTime(res.checkedAt)}`);
   }
   renderStage("wake");
-  updateProgressBar();
-}
-
-async function handleVscodeStart() {
-  setStageStatus("vscode-start", "in-progress", "Indítás…");
-  renderStage("vscode-start");
-  const res = await api.vscodeOpen(null);
-  if (res.ok) setStageStatus("vscode-start", "done", `Elindítva (${fmtTime(res.launchedAt)}).`);
-  else setStageStatus("vscode-start", "error", res.message || res.error);
-  renderStage("vscode-start");
   updateProgressBar();
 }
 
@@ -249,72 +204,16 @@ async function handleOpenProject() {
   setStageStatus("open-project", "in-progress", `Megnyitás: ${folder}…`);
   renderStage("open-project");
   const res = await api.vscodeOpen(folder);
-  if (res.ok) setStageStatus("open-project", "done", `Megnyitva: ${folder} (${fmtTime(res.launchedAt)})`);
-  else setStageStatus("open-project", "error", res.message || res.error);
-  renderStage("open-project");
-  updateProgressBar();
-}
-
-async function handleTrustFolder() {
-  const folder = state.projects.selected;
-  if (!folder) {
-    setStageStatus("trust-folder", "error", "Előbb válassz mappát a fenti listából.");
-    renderStage("trust-folder");
-    return;
-  }
-  setStageStatus("trust-folder", "in-progress", `Megbízhatóvá tétel: ${folder}…`);
-  renderStage("trust-folder");
-  const res = await api.vscodeOpen(folder);
-  if (res.ok) setStageStatus("trust-folder", "done", `Megbízható: ${folder} (${fmtTime(res.launchedAt)})`);
-  else setStageStatus("trust-folder", "error", res.message || res.error);
-  renderStage("trust-folder");
-  updateProgressBar();
-}
-
-async function handleClaudeOutput() {
-  const res = await api.claudeOutput();
-  if (res.ok) {
-    state.claude.running = res.running;
-    state.claude.lines = res.lines || [];
-    save();
-    renderClaudeOutput();
-  }
-}
-
-async function refreshClaudeHint() {
-  const res = await api.claudeStatus();
-  if (!res.ok) return;
-  if (res.hint === "likely_logged_in") {
-    renderClaudeHint(`Valószínűleg be vagy jelentkezve (hitelesítés: ${fmtTime(res.lastModifiedAt)}).`);
-  } else {
-    renderClaudeHint("Nincs mentett Claude hitelesítés — ha a kimenet bejelentkezést kér, egyszeri manuális belépés szükséges.");
-  }
-}
-
-async function handleClaudeRemoteControl() {
-  const folder = state.projects.selected;
-  if (!folder) {
-    setStageStatus("remote-control", "error", "Előbb válassz mappát a fenti listából.");
-    renderStage("remote-control");
-    return;
-  }
-  setStageStatus("remote-control", "in-progress", `Remote Control indítása: ${folder}…`);
-  renderStage("remote-control");
-  const res = await api.claudeRemoteControl(folder);
   if (res.ok) {
     setStageStatus(
-      "remote-control",
+      "open-project",
       "done",
-      res.alreadyRunning
-        ? `Már fut ebben a mappában (${folder}).`
-        : `Elindítva (${folder}). Nyisd meg a claude.ai/code appot a csatlakozáshoz.`
+      `Megnyitva: ${folder} (${fmtTime(res.launchedAt)}). A Claude Code panel és a Remote Control automatikusan aktiválódik VS Code-ban.`
     );
-    await handleClaudeOutput();
-    await refreshClaudeHint();
   } else {
-    setStageStatus("remote-control", "error", res.message || res.error);
+    setStageStatus("open-project", "error", res.message || res.error);
   }
-  renderStage("remote-control");
+  renderStage("open-project");
   updateProgressBar();
 }
 
@@ -365,12 +264,8 @@ async function handleShutdown() {
 
 const ACTIONS = {
   "check-status": handleCheckStatus,
-  "vscode-start": handleVscodeStart,
   "create-project": handleCreateProject,
   "open-project": handleOpenProject,
-  "trust-folder": handleTrustFolder,
-  "claude-remote-control": handleClaudeRemoteControl,
-  "claude-output": handleClaudeOutput,
   "refresh-projects": handleRefreshProjects,
   shutdown: handleShutdown,
   "config-refresh": handleConfigRefresh,
@@ -388,7 +283,6 @@ function restartAutoPoll() {
   const seconds = Math.max(2, state.settings.pollIntervalSec || 5);
   pollTimer = setInterval(() => {
     handleCheckStatus();
-    if (state.claude.running) handleClaudeOutput();
   }, seconds * 1000);
 }
 
@@ -465,7 +359,6 @@ function boot() {
   renderAll();
   if (state.projects.list.length === 0) handleRefreshProjects();
   restartAutoPoll();
-  refreshClaudeHint();
   initGeoSpinners();
   requestAnimationFrame(tickGeoSpinners);
 }
